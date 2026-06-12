@@ -10,6 +10,7 @@ import {
   feedback,
   surveys,
   notificationTemplates,
+  users,
 } from "@/lib/db/schema"
 import { eq, desc, and, asc } from "drizzle-orm"
 
@@ -87,6 +88,16 @@ export async function getAllFeedback() {
 
 export async function getAllSurveys() {
   return db.select().from(surveys).orderBy(desc(surveys.createdAt))
+}
+
+export async function getAllUsers() {
+  return db.select({
+    id: users.id,
+    email: users.email,
+    name: users.name,
+    role: users.role,
+    createdAt: users.createdAt,
+  }).from(users).orderBy(desc(users.createdAt))
 }
 
 export type ComplaintRow = Awaited<ReturnType<typeof getAllComplaints>>[number]

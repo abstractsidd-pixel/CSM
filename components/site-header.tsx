@@ -22,7 +22,7 @@ export async function SiteHeader() {
           </span>
         </Link>
 
-        <NavLinks isAdmin={admin} />
+        <NavLinks isAdmin={admin} role={session?.role} />
 
         <div className="ml-auto flex items-center gap-2">
           <RoleSwitcher session={session} />

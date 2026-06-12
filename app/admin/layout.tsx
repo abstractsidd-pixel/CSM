@@ -19,12 +19,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </span>
           <h1 className="text-xl font-semibold">IWD Staff Access Only</h1>
           <p className="text-sm text-muted-foreground">
-            This area is restricted to Institute Works Department staff. Use the demo login in the
-            top-right to sign in as a JE, AE, EE, or Dean.
+            This area is restricted to Institute Works Department staff. Please sign in with
+            appropriate credentials.
           </p>
-          <Button variant="outline">
-            <Link href="/">Back to home</Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button>
+              <Link href="/login">Sign In</Link>
+            </Button>
+            <Button variant="outline">
+              <Link href="/">Back to home</Link>
+            </Button>
+          </div>
         </main>
       </div>
     )

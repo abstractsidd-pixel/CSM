@@ -53,11 +53,18 @@ export default async function AdminDashboard() {
             {session?.role === "JE" ? " (your assigned scope)" : ""}
           </p>
         </div>
-        <Button>
-          <Link href="/admin/complaints">
-            Manage Complaints
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button>
+            <Link href="/admin/complaints">
+              Manage Complaints
+            </Link>
+          </Button>
+          <Button variant="outline">
+            <Link href="/admin/users">
+              Manage Users
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

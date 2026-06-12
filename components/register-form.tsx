@@ -136,7 +136,7 @@ export function RegisterForm({
                 items={buildings.map((b) => ({ value: String(b.id), label: `${b.name} (${b.code})` }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select building" />
+                  <SelectValue placeholder="Select building"/>
                 </SelectTrigger>
                 <SelectContent>
                   {buildings.map((b) => (

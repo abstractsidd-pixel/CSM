@@ -8,9 +8,11 @@ import {
   slaRules,
   notificationTemplates,
   staff,
+  users,
 } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
+import bcrypt from "bcryptjs"
 
 export async function createBuilding(formData: FormData) {
   await db.insert(buildings).values({
@@ -116,4 +118,32 @@ export async function updateTemplate(formData: FormData) {
     .where(eq(notificationTemplates.id, id))
   revalidatePath("/admin/settings")
   return { ok: true }
+}
+
+export async function createUser(formData: FormData) {
+  const email = formData.get("email") as string
+  const name = formData.get("name") as string
+  const role = (formData.get("role") as string) || "User"
+  const password = formData.get("password") as string
+
+  if (!email || !name || !password) {
+    return { error: "All fields are required." }
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12)
+
+  await db.insert(users).values({
+    email,
+    name,
+    role,
+    passwordHash,
+  })
+
+  revalidatePath("/admin/users")
+  return { ok: true }
+}
+
+export async function deleteUser(id: number) {
+  await db.delete(users).where(eq(users.id, id))
+  revalidatePath("/admin/users")
 }

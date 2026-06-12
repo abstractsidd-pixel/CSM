@@ -18,7 +18,9 @@ import {
   getCategories,
   getTechnicians,
 } from "@/lib/queries"
-import { BarChart3, Download, FileSpreadsheet, Star, Timer } from "lucide-react"
+import { BarChart3, Download, FileSpreadsheet, Star, Timer, ShieldAlert } from "lucide-react"
+import { getSession } from "@/lib/session"
+import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +29,25 @@ export default async function ReportsPage({
 }: {
   searchParams: Promise<{ from?: string; to?: string }>
 }) {
+  const session = await getSession()
+
+  if (session?.role !== "EE" && session?.role !== "Dean") {
+    return (
+      <div className="flex flex-col items-center gap-4 py-24 text-center">
+        <span className="flex size-14 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <ShieldAlert className="size-7" />
+        </span>
+        <h1 className="text-xl font-semibold">Access Restricted</h1>
+        <p className="text-sm text-muted-foreground">
+          Reports & analytics are available to EE and Dean only.
+        </p>
+        <Button variant="outline">
+          <Link href="/admin">Back to Dashboard</Link>
+        </Button>
+      </div>
+    )
+  }
+
   const { from, to } = await searchParams
   const [complaints, feedback, buildings, categories, technicians] = await Promise.all([
     getAllComplaints(),

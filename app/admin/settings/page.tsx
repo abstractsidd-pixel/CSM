@@ -29,11 +29,32 @@ import {
   getSlaRules,
   getStaff,
 } from "@/lib/queries"
-import { Bell, Building2, Clock, Layers3, ShieldCheck, Trash2 } from "lucide-react"
+import { Bell, Building2, Clock, Layers3, ShieldCheck, ShieldAlert, Trash2 } from "lucide-react"
+import { getSession } from "@/lib/session"
+import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
 export default async function SettingsPage() {
+  const session = await getSession()
+
+  if (session?.role !== "EE" && session?.role !== "Dean") {
+    return (
+      <div className="flex flex-col items-center gap-4 py-24 text-center">
+        <span className="flex size-14 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <ShieldAlert className="size-7" />
+        </span>
+        <h1 className="text-xl font-semibold">Access Restricted</h1>
+        <p className="text-sm text-muted-foreground">
+          System settings are available to EE and Dean only.
+        </p>
+        <Button variant="outline">
+          <Link href="/admin">Back to Dashboard</Link>
+        </Button>
+      </div>
+    )
+  }
+
   const [buildings, categories, staff, slaRules, templates] = await Promise.all([
     getBuildings(),
     getCategories(),

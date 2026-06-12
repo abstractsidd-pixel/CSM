@@ -17,11 +17,14 @@ import {
 export default async function HomePage() {
   const session = await getSession()
   const admin = isAdminRole(session?.role)
+  const isStudent = session?.role === "User"
   const complaints = await getAllComplaints()
 
   const total = complaints.length
   const open = complaints.filter((c) => !["Closed", "Resolved"].includes(c.status)).length
   const resolved = complaints.filter((c) => ["Closed", "Resolved"].includes(c.status)).length
+
+  const dashboardHref = isStudent ? "/student" : admin ? "/admin" : "/login"
 
   return (
     <div className="min-h-screen">
@@ -47,9 +50,11 @@ export default async function HomePage() {
             <Button size="lg" variant="outline">
               <Link href="/track">Track Status</Link>
             </Button>
-            {admin && (
+            {(admin || isStudent) && (
               <Button size="lg" variant="secondary">
-                <Link href="/admin">Open IWD Dashboard</Link>
+                <Link href={dashboardHref}>
+                  {isStudent ? "My Dashboard" : "Open IWD Dashboard"}
+                </Link>
               </Button>
             )}
           </div>
@@ -93,7 +98,7 @@ export default async function HomePage() {
               </div>
             </div>
             <Button variant={admin ? "default" : "outline"}>
-              <Link href={admin ? "/admin" : "/register"}>
+              <Link href={admin ? "/admin" : "/login"}>
                 {admin ? "Go to Dashboard" : "Sign in as IWD staff"}
               </Link>
             </Button>
