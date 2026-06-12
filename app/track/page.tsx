@@ -9,6 +9,7 @@ import {
   getFeedbackForComplaint,
 } from "@/lib/queries"
 import { getSession } from "@/lib/session"
+import { redirect } from "next/navigation"
 
 export default async function TrackPage({
   searchParams,
@@ -17,6 +18,11 @@ export default async function TrackPage({
 }) {
   const params = await searchParams
   const session = await getSession()
+
+  if (!session) {
+    redirect("/login")
+  }
+
   const [buildings, technicians] = await Promise.all([getBuildings(), getTechnicians()])
 
   let complaint = null

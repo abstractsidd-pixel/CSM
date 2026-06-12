@@ -24,6 +24,7 @@ export const staff = pgTable("staff", {
   role: text("role").notNull().default("JE"),
   subdivision: text("subdivision"),
   buildingId: integer("building_id"),
+  aeId: integer("ae_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 

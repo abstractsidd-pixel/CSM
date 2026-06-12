@@ -2,13 +2,19 @@ import { SiteHeader } from "@/components/site-header"
 import { RegisterForm } from "@/components/register-form"
 import { getBuildings, getCategories, getSlaRules } from "@/lib/queries"
 import { getSession } from "@/lib/session"
+import { redirect } from "next/navigation"
 
 export default async function RegisterPage() {
-  const [buildings, categories, sla, session] = await Promise.all([
+  const session = await getSession()
+
+  if (!session) {
+    redirect("/login")
+  }
+
+  const [buildings, categories, sla] = await Promise.all([
     getBuildings(),
     getCategories(),
     getSlaRules(),
-    getSession(),
   ])
 
   return (

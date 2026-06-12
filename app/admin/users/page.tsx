@@ -15,8 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Users, Trash2, ShieldAlert } from "lucide-react"
-import Link from "next/link"
+import { Users, Trash2 } from "lucide-react"
+import { ExcelImport } from "@/components/admin/excel-import"
 
 export const dynamic = "force-dynamic"
 
@@ -84,34 +84,24 @@ export default async function UsersPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Add User Account</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form action={async (formData: FormData) => { "use server"; await createUser(formData) }} className="flex flex-col gap-3">
-              <Field name="name" label="Full Name" placeholder="Siddharth Suryavanshi" required />
-              <Field name="email" label="Email" type="email" placeholder="user@iitgoa.ac.in" required />
-              <Field name="password" label="Password" type="password" placeholder="Set a password" required />
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="role">Role</Label>
-                <select
-                  id="role"
-                  name="role"
-                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  defaultValue="User"
-                >
-                  <option value="User">Student / Faculty</option>
-                  <option value="JE">Junior Engineer</option>
-                  <option value="AE">Assistant Engineer</option>
-                  <option value="EE">Executive Engineer</option>
-                  <option value="Dean">Dean (IWD)</option>
-                </select>
-              </div>
-              <Button type="submit">Create Account</Button>
-            </form>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Add Student / Faculty</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form action={async (formData: FormData) => { "use server"; await createUser(formData) }} className="flex flex-col gap-3">
+                <Field name="name" label="Full Name" placeholder="Siddharth Suryavanshi" required />
+                <Field name="email" label="Email" type="email" placeholder="user@iitgoa.ac.in" required />
+                <Field name="password" label="Password" type="password" placeholder="Set a password" required />
+                <input type="hidden" name="role" value="User" />
+                <Button type="submit">Create Account</Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <ExcelImport />
+        </div>
       </section>
     </div>
   )

@@ -1,9 +1,15 @@
 import { SiteHeader } from "@/components/site-header"
 import { SurveyForm } from "@/components/survey-form"
 import { getSession } from "@/lib/session"
+import { redirect } from "next/navigation"
 
 export default async function FeedbackPage() {
   const session = await getSession()
+
+  if (!session) {
+    redirect("/login")
+  }
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -15,7 +21,7 @@ export default async function FeedbackPage() {
             complaint, use the Track page.
           </p>
         </div>
-        <SurveyForm defaultEmail={session?.email ?? ""} />
+        <SurveyForm defaultEmail={session.email} />
       </main>
     </div>
   )

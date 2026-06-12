@@ -28,17 +28,21 @@ import {
   getNotificationTemplates,
   getSlaRules,
   getStaff,
+  getAllUsers,
 } from "@/lib/queries"
 import { Bell, Building2, Clock, Layers3, ShieldCheck, ShieldAlert, Trash2 } from "lucide-react"
 import { getSession } from "@/lib/session"
 import Link from "next/link"
+import { StaffManager } from "@/components/admin/staff-manager"
+import { ChangePasswordForm } from "@/components/admin/change-password"
+import { CreateStaffForm } from "@/components/admin/create-staff-form"
 
 export const dynamic = "force-dynamic"
 
 export default async function SettingsPage() {
   const session = await getSession()
 
-  if (session?.role !== "EE" && session?.role !== "Dean") {
+  if (!session?.role || session.role === "User") {
     return (
       <div className="flex flex-col items-center gap-4 py-24 text-center">
         <span className="flex size-14 items-center justify-center rounded-full bg-destructive/10 text-destructive">
@@ -46,7 +50,7 @@ export default async function SettingsPage() {
         </span>
         <h1 className="text-xl font-semibold">Access Restricted</h1>
         <p className="text-sm text-muted-foreground">
-          System settings are available to EE and Dean only.
+          This page is available to IWD staff only.
         </p>
         <Button variant="outline">
           <Link href="/admin">Back to Dashboard</Link>
@@ -55,12 +59,22 @@ export default async function SettingsPage() {
     )
   }
 
-  const [buildings, categories, staff, slaRules, templates] = await Promise.all([
+  const role = session.role
+  const isJE = role === "JE"
+  const isAE = role === "AE"
+  const isEE = role === "EE"
+  const isDean = role === "Dean"
+  const canManageStaff = isEE || isDean
+  const canAddStaff = isAE || isEE || isDean
+  const canViewStaff = isAE || isEE || isDean
+
+  const [buildings, categories, staff, slaRules, templates, allUsers] = await Promise.all([
     getBuildings(),
     getCategories(),
     getStaff(),
     getSlaRules(),
     getNotificationTemplates(),
+    getAllUsers(),
   ])
 
   const staffName = (id: number | null) => staff.find((s) => s.id === id)?.name ?? "-"
@@ -73,10 +87,6 @@ export default async function SettingsPage() {
     "use server"
     await createCategory(formData)
   }
-  const createStaffAction = async (formData: FormData) => {
-    "use server"
-    await createStaff(formData)
-  }
   const updateSlaAction = async (formData: FormData) => {
     "use server"
     await updateSla(formData)
@@ -86,15 +96,20 @@ export default async function SettingsPage() {
     await updateTemplate(formData)
   }
 
+  const currentUser = allUsers.find((u) => u.email === session?.email)
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">System Settings</h1>
         <p className="text-sm text-muted-foreground">
-          Configure CMS master data, SLA limits, staff access, and notification content.
+          {isJE && "Manage buildings, categories, and your account password."}
+          {isAE && "Manage buildings, categories, view IWD staff, and your account password."}
+          {canManageStaff && "Configure CMS master data, SLA limits, staff access, and notification content."}
         </p>
       </div>
 
+      {/* Buildings Master — JE, AE, EE, Dean */}
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card>
           <CardHeader>
@@ -164,6 +179,7 @@ export default async function SettingsPage() {
         </Card>
       </section>
 
+      {/* Categories Master — JE, AE, EE, Dean */}
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card>
           <CardHeader>
@@ -239,128 +255,98 @@ export default async function SettingsPage() {
         </Card>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShieldCheck className="size-4 text-primary" />
-              IWD Staff & Roles
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Subdivision</TableHead>
-                  <TableHead>Building</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {staff.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell className="font-medium">{member.name}</TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>{member.role}</TableCell>
-                    <TableCell>{member.subdivision || "-"}</TableCell>
-                    <TableCell>
-                      {buildings.find((building) => building.id === member.buildingId)?.name ?? "-"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+      {/* IWD Staff — AE (read-only), EE/Dean (full CRUD) */}
+      {canViewStaff && (
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ShieldCheck className="size-4 text-primary" />
+                IWD Staff & Roles
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StaffManager staff={staff} buildings={buildings} sessionRole={role} />
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Add IWD Staff</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form action={createStaffAction} className="flex flex-col gap-3">
-              <Field name="name" label="Name" required />
-              <Field name="email" label="IIT Goa Email" type="email" placeholder="name@iitgoa.ac.in" required />
-              <FormSelect name="role" label="Role" defaultValue="JE">
-                {ROLES.filter((role) => role !== "User").map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </FormSelect>
-              <Field name="subdivision" label="Subdivision" placeholder="Civil / Electrical / I&S" />
-              <FormSelect name="buildingId" label="Assigned Building" defaultValue="">
-                <option value="">Campus-wide / not assigned</option>
-                {buildings.map((building) => (
-                  <option key={building.id} value={building.id}>
-                    {building.name}
-                  </option>
-                ))}
-              </FormSelect>
-              <Button type="submit">Add Staff</Button>
-            </form>
-          </CardContent>
-        </Card>
-      </section>
+          {canAddStaff && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Add IWD Staff</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CreateStaffForm buildings={buildings} staff={staff} />
+              </CardContent>
+            </Card>
+          )}
+        </section>
+      )}
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="size-4 text-primary" />
-              SLA Time Limits
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {slaRules.map((rule) => (
-              <form
-                key={rule.id}
-                action={updateSlaAction}
-                className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[1fr_120px_auto]"
-              >
-                <input type="hidden" name="priority" value={rule.priority} />
-                <div>
-                  <p className="font-medium">{rule.priority}</p>
-                  <p className="text-xs text-muted-foreground">{rule.label}</p>
-                </div>
-                <Input name="hours" type="number" min="1" defaultValue={rule.hours} />
-                <Button type="submit">Save</Button>
-              </form>
-            ))}
-          </CardContent>
-        </Card>
+      {/* SLA & Templates — EE/Dean only */}
+      {canManageStaff && (
+        <section className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Clock className="size-4 text-primary" />
+                SLA Time Limits
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {slaRules.map((rule) => (
+                <form
+                  key={rule.id}
+                  action={updateSlaAction}
+                  className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[1fr_120px_auto]"
+                >
+                  <input type="hidden" name="priority" value={rule.priority} />
+                  <div>
+                    <p className="font-medium">{rule.priority}</p>
+                    <p className="text-xs text-muted-foreground">{rule.label}</p>
+                  </div>
+                  <Input name="hours" type="number" min="1" defaultValue={rule.hours} />
+                  <Button type="submit">Save</Button>
+                </form>
+              ))}
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Bell className="size-4 text-primary" />
-              Notification Templates
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {templates.map((template) => (
-              <form key={template.id} action={updateTemplateAction} className="flex flex-col gap-2 rounded-lg border border-border p-3">
-                <input type="hidden" name="id" value={template.id} />
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium">{template.event}</p>
-                  <FormSelect name="channel" label="Channel" defaultValue={template.channel}>
-                    <option value="Email">Email</option>
-                    <option value="SMS">SMS</option>
-                    <option value="Email + SMS">Email + SMS</option>
-                  </FormSelect>
-                </div>
-                <Field name="subject" label="Subject" defaultValue={template.subject ?? ""} />
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor={`body-${template.id}`}>Body</Label>
-                  <Textarea id={`body-${template.id}`} name="body" defaultValue={template.body} rows={3} required />
-                </div>
-                <Button type="submit">Save Template</Button>
-              </form>
-            ))}
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Bell className="size-4 text-primary" />
+                Notification Templates
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              {templates.map((template) => (
+                <form key={template.id} action={updateTemplateAction} className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                  <input type="hidden" name="id" value={template.id} />
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{template.event}</p>
+                    <FormSelect name="channel" label="Channel" defaultValue={template.channel}>
+                      <option value="Email">Email</option>
+                      <option value="SMS">SMS</option>
+                      <option value="Email + SMS">Email + SMS</option>
+                    </FormSelect>
+                  </div>
+                  <Field name="subject" label="Subject" defaultValue={template.subject ?? ""} />
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor={`body-${template.id}`}>Body</Label>
+                    <Textarea id={`body-${template.id}`} name="body" defaultValue={template.body} rows={3} required />
+                  </div>
+                  <Button type="submit">Save Template</Button>
+                </form>
+              ))}
+            </CardContent>
+          </Card>
+        </section>
+      )}
+
+      {/* Change Password — all roles */}
+      <section>
+        {currentUser && <ChangePasswordForm userId={currentUser.id} />}
       </section>
     </div>
   )

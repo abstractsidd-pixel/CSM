@@ -32,13 +32,37 @@ export async function deleteBuilding(id: number) {
 }
 
 export async function createStaff(formData: FormData) {
-  await db.insert(staff).values({
+  const password = formData.get("password") as string
+  if (!password) return { error: "Password is required." }
+
+  const passwordHash = await bcrypt.hash(password, 12)
+
+  const staffData = {
     name: formData.get("name") as string,
     email: formData.get("email") as string,
     role: (formData.get("role") as string) || "JE",
     subdivision: (formData.get("subdivision") as string) || null,
     buildingId: formData.get("buildingId") ? Number(formData.get("buildingId")) : null,
-  })
+    aeId: formData.get("aeId") ? Number(formData.get("aeId")) : null,
+  }
+
+  const existing = await db.select().from(users).where(eq(users.email, staffData.email)).limit(1)
+  if (existing.length > 0) {
+    await db.update(users).set({
+      name: staffData.name,
+      role: staffData.role,
+      passwordHash,
+    }).where(eq(users.email, staffData.email))
+  } else {
+    await db.insert(users).values({
+      email: staffData.email,
+      name: staffData.name,
+      role: staffData.role,
+      passwordHash,
+    })
+  }
+
+  await db.insert(staff).values(staffData)
   revalidatePath("/admin/settings")
   return { ok: true }
 }
@@ -146,4 +170,72 @@ export async function createUser(formData: FormData) {
 export async function deleteUser(id: number) {
   await db.delete(users).where(eq(users.id, id))
   revalidatePath("/admin/users")
+}
+
+export async function createUsersBulk(rows: { name: string; email: string; password: string }[]) {
+  const passwordHash = await bcrypt.hash(rows[0].password, 12)
+  const values = rows.map((r) => ({
+    name: r.name,
+    email: r.email,
+    role: "User" as const,
+    passwordHash,
+  }))
+  await db.insert(users).values(values)
+  revalidatePath("/admin/users")
+  return { ok: true, count: rows.length }
+}
+
+export async function deleteStaff(id: number) {
+  const rows = await db.select().from(staff).where(eq(staff.id, id)).limit(1)
+  if (rows[0]) {
+    await db.delete(users).where(eq(users.email, rows[0].email))
+  }
+  await db.delete(staff).where(eq(staff.id, id))
+  revalidatePath("/admin/settings")
+}
+
+export async function updateStaff(formData: FormData) {
+  const id = Number(formData.get("id"))
+  if (!id) return { error: "Staff ID is required." }
+
+  await db
+    .update(staff)
+    .set({
+      name: formData.get("name") as string,
+      email: formData.get("email") as string,
+      role: (formData.get("role") as string) || "JE",
+      subdivision: (formData.get("subdivision") as string) || null,
+      buildingId: formData.get("buildingId") ? Number(formData.get("buildingId")) : null,
+      aeId: formData.get("aeId") ? Number(formData.get("aeId")) : null,
+    })
+    .where(eq(staff.id, id))
+
+  revalidatePath("/admin/settings")
+  return { ok: true }
+}
+
+export async function updateUserPassword(formData: FormData) {
+  const id = Number(formData.get("id"))
+  const password = formData.get("password") as string
+
+  if (!id || !password) return { error: "User ID and password are required." }
+
+  const passwordHash = await bcrypt.hash(password, 12)
+  await db.update(users).set({ passwordHash }).where(eq(users.id, id))
+
+  revalidatePath("/admin/settings")
+  return { ok: true }
+}
+
+export async function changeOwnPassword(formData: FormData) {
+  const password = formData.get("password") as string
+  const userId = Number(formData.get("userId"))
+
+  if (!userId || !password) return { error: "Password is required." }
+
+  const passwordHash = await bcrypt.hash(password, 12)
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId))
+
+  revalidatePath("/admin/settings")
+  return { ok: true }
 }

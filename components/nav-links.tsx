@@ -15,6 +15,7 @@ const JE_LINKS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/complaints", label: "Complaints" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/settings", label: "Settings" },
   { href: "/register", label: "Register" },
 ]
 
@@ -22,6 +23,7 @@ const AE_LINKS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/complaints", label: "Complaints" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/settings", label: "Settings" },
   { href: "/register", label: "Register" },
 ]
 

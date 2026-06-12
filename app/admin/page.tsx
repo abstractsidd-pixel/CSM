@@ -27,10 +27,18 @@ export default async function AdminDashboard() {
     getTechnicians(),
   ])
 
-  // JE sees only their building/subdivision scope; others see all
+  // JE sees only their building scope; unassigned JE sees all (campus-wide); others see all
   const scoped =
     session?.role === "JE" && session.staffId
-      ? complaints.filter((c) => c.jeId === session.staffId)
+      ? (() => {
+          const assignedBuildingIds = buildings
+            .filter((b) => b.jeId === session.staffId)
+            .map((b) => b.id)
+          if (assignedBuildingIds.length === 0) return complaints
+          return complaints.filter(
+            (c) => assignedBuildingIds.includes(c.buildingId) || c.jeId === session.staffId,
+          )
+        })()
       : complaints
 
   const stats = computeStats(scoped)

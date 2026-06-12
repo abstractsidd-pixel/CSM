@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { StatusBadge, PriorityBadge, slaStatus } from "@/components/shared-ui"
 import { SiteHeader } from "@/components/site-header"
+import { ChangePasswordForm } from "@/components/admin/change-password"
 import {
   ClipboardList,
   Search,
@@ -144,6 +145,8 @@ export default async function StudentDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {session.userId && <ChangePasswordForm userId={session.userId} />}
         </div>
       </main>
     </div>
