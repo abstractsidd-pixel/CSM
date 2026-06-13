@@ -30,19 +30,23 @@ export async function logActivity(
   action: string,
   details: string = "",
 ) {
-  await ensureLogDir()
+  try {
+    await ensureLogDir()
 
-  const entry: AuditEntry = {
-    timestamp: formatTimestamp(),
-    user,
-    role,
-    action,
-    details,
+    const entry: AuditEntry = {
+      timestamp: formatTimestamp(),
+      user,
+      role,
+      action,
+      details,
+    }
+
+    const line = `[${entry.timestamp}] [${entry.role}] ${entry.user} | ${entry.action} | ${entry.details}\n`
+
+    await fs.appendFile(LOG_FILE, line, "utf-8")
+  } catch {
+    // Silently fail on read-only filesystems (e.g. Vercel serverless)
   }
-
-  const line = `[${entry.timestamp}] [${entry.role}] ${entry.user} | ${entry.action} | ${entry.details}\n`
-
-  await fs.appendFile(LOG_FILE, line, "utf-8")
 }
 
 export async function getActivityLog(from?: string, to?: string): Promise<string> {
