@@ -11,6 +11,30 @@ import {
 } from "@/lib/db/schema"
 import { and, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
+import { logActivity } from "@/lib/audit-log"
+import { getSession } from "@/lib/session"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { isAdminRole, STATUSES } from "@/lib/constants"
+
+const MUTATION_LIMIT = 30
+const MUTATION_WINDOW_MS = 60 * 1000
+
+async function checkMutationLimit(): Promise<string | null> {
+  const session = await getSession()
+  const key = `mut:${session?.email || "anonymous"}`
+  const { allowed, retryAfterMs } = checkRateLimit(key, MUTATION_LIMIT, MUTATION_WINDOW_MS)
+  if (!allowed) {
+    return `Too many requests. Please wait ${Math.ceil(retryAfterMs / 1000)} seconds.`
+  }
+  return null
+}
+
+function requireAdmin(): Promise<string | null> {
+  return getSession().then((s) => {
+    if (!s || !isAdminRole(s.role)) return "Unauthorized."
+    return null
+  })
+}
 
 function pad(n: number, len = 4) {
   return String(n).padStart(len, "0")
@@ -18,7 +42,6 @@ function pad(n: number, len = 4) {
 
 async function generateDocket() {
   const year = new Date().getFullYear()
-  // count existing for a simple sequential number
   const all = await db.select({ id: complaints.id }).from(complaints)
   const seq = all.length + 1
   return `IWD-${year}-${pad(seq)}`
@@ -31,6 +54,10 @@ async function dueDateFor(priority: string) {
 }
 
 export async function registerComplaint(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const session = await getSession()
   const buildingId = Number(formData.get("buildingId"))
   const floor = (formData.get("floor") as string) || null
   const room = (formData.get("room") as string) || null
@@ -48,6 +75,10 @@ export async function registerComplaint(formData: FormData) {
 
   if (!buildingId || !complainantEmail) {
     return { error: "Building and email are required." }
+  }
+
+  if (photoUrl && !photoUrl.startsWith("https://")) {
+    return { error: "Photo URL must use HTTPS." }
   }
 
   const docket = await generateDocket()
@@ -83,12 +114,20 @@ export async function registerComplaint(formData: FormData) {
     staffLabel: complainantName || complainantEmail,
   })
 
+  await logActivity(session?.email || complainantEmail, session?.role || "User", "COMPLAINT_REGISTERED", `Docket: ${docket} Building: ${buildingId} Priority: ${priority}`)
   revalidatePath("/track")
   revalidatePath("/admin")
   return { docket: created.docketNumber }
 }
 
 export async function assignComplaint(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const roleError = await requireAdmin()
+  if (roleError) return { error: roleError }
+
+  const session = await getSession()
   const id = Number(formData.get("id"))
   const technicianId = Number(formData.get("technicianId"))
   const technicianName = (formData.get("technicianName") as string) || null
@@ -118,16 +157,28 @@ export async function assignComplaint(formData: FormData) {
     staffLabel,
   })
 
+  await logActivity(session?.email || "system", session?.role || "system", "COMPLAINT_ASSIGNED", `Complaint ID: ${id} Technician: ${technicianName || technicianId}`)
   revalidatePath("/admin")
   revalidatePath("/track")
   return { ok: true }
 }
 
 export async function updateStatus(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const roleError = await requireAdmin()
+  if (roleError) return { error: roleError }
+
+  const session = await getSession()
   const id = Number(formData.get("id"))
   const status = formData.get("status") as string
   const note = (formData.get("note") as string) || null
   const staffLabel = (formData.get("staffLabel") as string) || "IWD"
+
+  if (!STATUSES.includes(status as typeof STATUSES[number])) {
+    return { error: "Invalid status value." }
+  }
 
   const patch: Record<string, unknown> = { status }
   if (status === "Resolved" || status === "Closed") patch.closedAt = new Date()
@@ -141,17 +192,29 @@ export async function updateStatus(formData: FormData) {
     staffLabel,
   })
 
+  await logActivity(session?.email || "system", session?.role || "system", "COMPLAINT_STATUS_CHANGED", `Complaint ID: ${id} New Status: ${status}`)
   revalidatePath("/admin")
   revalidatePath("/track")
   return { ok: true }
 }
 
 export async function submitFeedback(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const session = await getSession()
+  if (!session) return { error: "Unauthorized." }
+
   const complaintId = Number(formData.get("complaintId"))
   const rating = Number(formData.get("rating"))
   const comment = (formData.get("comment") as string) || null
 
   if (!complaintId || !rating) return { error: "Rating is required." }
+
+  const rows = await db.select().from(complaints).where(eq(complaints.id, complaintId)).limit(1)
+  const c = rows[0]
+  if (!c) return { error: "Complaint not found." }
+  if (c.complainantEmail !== session.email) return { error: "You can only submit feedback for your own complaints." }
 
   await db.insert(feedback).values({ complaintId, rating, comment })
   await db
@@ -166,18 +229,26 @@ export async function submitFeedback(formData: FormData) {
     staffLabel: "Complainant",
   })
 
+  await logActivity(session.email, session.role, "FEEDBACK_SUBMITTED", `Complaint ID: ${complaintId} Rating: ${rating}/5`)
   revalidatePath("/track")
   revalidatePath("/admin")
   return { ok: true }
 }
 
 export async function reactivateComplaint(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const session = await getSession()
+  if (!session) return { error: "Unauthorized." }
+
   const id = Number(formData.get("id"))
   const reason = (formData.get("reason") as string) || "Reopened by complainant."
 
   const rows = await db.select().from(complaints).where(eq(complaints.id, id)).limit(1)
   const c = rows[0]
   if (!c) return { error: "Complaint not found." }
+  if (c.complainantEmail !== session.email) return { error: "You can only reopen your own complaints." }
 
   const newSuffix = c.reactivationSuffix + 1
   await db
@@ -197,16 +268,22 @@ export async function reactivateComplaint(formData: FormData) {
     staffLabel: "Complainant",
   })
 
+  await logActivity(session.email, session.role, "COMPLAINT_REACTIVATED", `Complaint ID: ${id} Docket: ${c.docketNumber} Reason: ${reason}`)
   revalidatePath("/track")
   revalidatePath("/admin")
   return { ok: true }
 }
 
 export async function submitSurvey(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const session = await getSession()
   const rating = Number(formData.get("rating"))
   const comment = (formData.get("comment") as string) || null
   const respondentEmail = (formData.get("respondentEmail") as string) || null
   if (!rating) return { error: "Rating is required." }
   await db.insert(surveys).values({ rating, comment, respondentEmail })
+  await logActivity(session?.email || respondentEmail || "system", session?.role || "User", "SURVEY_SUBMITTED", `Rating: ${rating}/5`)
   return { ok: true }
 }

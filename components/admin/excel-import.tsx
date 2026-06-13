@@ -54,7 +54,7 @@ export function ExcelImport() {
     setImporting(true)
     try {
       const result = await createUsersBulk(preview)
-      if (result.count > 0) {
+      if ("count" in result && result.count && result.count > 0) {
         toast.success(`Successfully imported ${result.count} user(s).`)
         setPreview([])
         setFileName(null)

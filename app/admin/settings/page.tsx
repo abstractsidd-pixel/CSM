@@ -139,7 +139,7 @@ export default async function SettingsPage() {
                     <TableCell>{building.area || "-"}</TableCell>
                     <TableCell>{staffName(building.jeId)}</TableCell>
                     <TableCell className="text-right">
-                      <form action={deleteBuilding.bind(null, building.id)}>
+                      <form action={async () => { "use server"; await deleteBuilding(building.id) }}>
                         <Button variant="ghost" size="sm" type="submit">
                           <Trash2 className="size-3.5" />
                           Delete
@@ -207,7 +207,7 @@ export default async function SettingsPage() {
                     <TableCell>{categoryName(category.parentId)}</TableCell>
                     <TableCell>{category.trade || "-"}</TableCell>
                     <TableCell className="text-right">
-                      <form action={deleteCategory.bind(null, category.id)}>
+                      <form action={async () => { "use server"; await deleteCategory(category.id) }}>
                         <Button variant="ghost" size="sm" type="submit">
                           <Trash2 className="size-3.5" />
                           Delete

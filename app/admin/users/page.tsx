@@ -63,7 +63,7 @@ export default async function UsersPage() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.role}</TableCell>
                     <TableCell className="text-right">
-                      <form action={deleteUser.bind(null, user.id)}>
+                      <form action={async () => { "use server"; await deleteUser(user.id) }}>
                         <Button variant="ghost" size="sm" type="submit">
                           <Trash2 className="size-3.5" />
                           Delete
