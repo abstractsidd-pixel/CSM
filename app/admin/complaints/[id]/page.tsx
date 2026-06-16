@@ -8,6 +8,7 @@ import {
   getBuildings,
   getTechnicians,
   getFeedbackForComplaint,
+  getStaff,
 } from "@/lib/queries"
 import { getSession } from "@/lib/session"
 import { StatusBadge, PriorityBadge, formatDate, slaStatus } from "@/components/shared-ui"
@@ -31,6 +32,16 @@ export default async function ComplaintDetailPage({
     getTechnicians(),
     getFeedbackForComplaint(complaint.id),
   ])
+
+  if (session?.role === "JE" && session.staffId) {
+    const jeStaff = await getStaff()
+    const assignedBuildingIds = jeStaff
+      .filter((s) => s.id === session.staffId && s.buildingId)
+      .map((s) => s.buildingId as number)
+    if (!assignedBuildingIds.includes(complaint.buildingId)) {
+      notFound()
+    }
+  }
 
   const building = buildings.find((b) => b.id === complaint.buildingId)
   const tech = technicians.find((t) => t.id === complaint.assignedTechnicianId)

@@ -5,6 +5,7 @@ import {
   getAllComplaints,
   getBuildings,
   getTechnicians,
+  getStaff,
 } from "@/lib/queries"
 import { getSession } from "@/lib/session"
 import { computeStats } from "@/lib/stats"
@@ -21,22 +22,21 @@ import { StatusChart } from "@/components/admin/status-chart"
 
 export default async function AdminDashboard() {
   const session = await getSession()
-  const [complaints, buildings, technicians] = await Promise.all([
+  const [complaints, buildings, technicians, allStaff] = await Promise.all([
     getAllComplaints(),
     getBuildings(),
     getTechnicians(),
+    getStaff(),
   ])
 
-  // JE sees only their building scope; unassigned JE sees all (campus-wide); others see all
   const scoped =
     session?.role === "JE" && session.staffId
       ? (() => {
-          const assignedBuildingIds = buildings
-            .filter((b) => b.jeId === session.staffId)
-            .map((b) => b.id)
-          if (assignedBuildingIds.length === 0) return complaints
+          const assignedBuildingIds = allStaff
+            .filter((s) => s.id === session.staffId && s.buildingId)
+            .map((s) => s.buildingId as number)
           return complaints.filter(
-            (c) => assignedBuildingIds.includes(c.buildingId) || c.jeId === session.staffId,
+            (c) => assignedBuildingIds.includes(c.buildingId),
           )
         })()
       : complaints

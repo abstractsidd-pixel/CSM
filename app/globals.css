@@ -128,3 +128,22 @@
     @apply font-sans;
   }
 }
+
+/* Sonner toast theme matching */
+[data-sonner-toaster] {
+  --normal-bg: var(--popover) !important;
+  --normal-text: var(--popover-foreground) !important;
+  --normal-border: var(--border) !important;
+  --success-bg: oklch(0.95 0.05 145) !important;
+  --success-text: oklch(0.3 0.12 145) !important;
+  --success-border: oklch(0.8 0.1 145) !important;
+  --error-bg: oklch(0.95 0.05 25) !important;
+  --error-text: oklch(0.3 0.15 25) !important;
+  --error-border: oklch(0.8 0.15 25) !important;
+  --warning-bg: oklch(0.95 0.05 75) !important;
+  --warning-text: oklch(0.3 0.12 75) !important;
+  --warning-border: oklch(0.8 0.12 75) !important;
+  --info-bg: oklch(0.95 0.03 255) !important;
+  --info-text: oklch(0.3 0.08 255) !important;
+  --info-border: oklch(0.8 0.08 255) !important;
+}

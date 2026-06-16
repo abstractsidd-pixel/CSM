@@ -14,7 +14,7 @@ import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/audit-log"
 import { getSession } from "@/lib/session"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { isAdminRole, STATUSES } from "@/lib/constants"
+import { isAdminRole, STATUSES, PRIORITIES } from "@/lib/constants"
 
 const MUTATION_LIMIT = 30
 const MUTATION_WINDOW_MS = 60 * 1000
@@ -71,10 +71,14 @@ export async function registerComplaint(formData: FormData) {
   const preferredAtRaw = formData.get("preferredAt") as string
   const photoUrl = (formData.get("photoUrl") as string) || null
   const complainantName = (formData.get("complainantName") as string) || null
-  const complainantEmail = (formData.get("complainantEmail") as string) || ""
+  const complainantEmail = session?.email || ""
 
   if (!buildingId || !complainantEmail) {
     return { error: "Building and email are required." }
+  }
+
+  if (!PRIORITIES.includes(priority as typeof PRIORITIES[number])) {
+    return { error: "Invalid priority." }
   }
 
   if (photoUrl && !photoUrl.startsWith("https://")) {

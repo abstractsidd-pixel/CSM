@@ -29,8 +29,9 @@ export default async function TrackPage({
   let logs: Awaited<ReturnType<typeof getLogsForComplaint>> = []
   let feedback = null
   if (params.docket) {
-    complaint = await getComplaintByDocket(params.docket.trim())
-    if (complaint) {
+    const found = await getComplaintByDocket(params.docket.trim())
+    if (found && found.complainantEmail === session.email) {
+      complaint = found
       logs = await getLogsForComplaint(complaint.id)
       feedback = await getFeedbackForComplaint(complaint.id)
     }

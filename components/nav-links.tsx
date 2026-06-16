@@ -14,6 +14,7 @@ const USER_LINKS = [
 const JE_LINKS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/complaints", label: "Complaints" },
+  { href: "/admin/track", label: "Track" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/register", label: "Register" },
@@ -22,6 +23,7 @@ const JE_LINKS = [
 const AE_LINKS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/complaints", label: "Complaints" },
+  { href: "/admin/track", label: "Track" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/register", label: "Register" },
@@ -30,6 +32,7 @@ const AE_LINKS = [
 const EE_DEAN_LINKS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/complaints", label: "Complaints" },
+  { href: "/admin/track", label: "Track" },
   { href: "/admin/technicians", label: "Technicians" },
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/settings", label: "Settings" },

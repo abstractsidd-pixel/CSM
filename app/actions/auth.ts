@@ -5,7 +5,7 @@ import type { Role } from "@/lib/constants"
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { users } from "@/lib/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import bcrypt from "bcryptjs"
 import { logActivity } from "@/lib/audit-log"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
@@ -24,12 +24,17 @@ export async function credentialLogin(email: string, password: string, role: Rol
   const rows = await db
     .select()
     .from(users)
-    .where(and(eq(users.email, email), eq(users.role, role)))
+    .where(eq(users.email, email))
     .limit(1)
   const user = rows[0]
 
   if (!user) {
     await logActivity(email, role, "LOGIN_FAILED", "Invalid credentials")
+    return { ok: false, error: "Invalid email or password." }
+  }
+
+  if (user.role !== role) {
+    await logActivity(email, role, "LOGIN_FAILED", "Role mismatch")
     return { ok: false, error: "Invalid email or password." }
   }
 

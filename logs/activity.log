@@ -86,3 +86,84 @@
 [2026-06-13T14:49:27.321Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
 [2026-06-13T14:49:45.539Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
 [2026-06-13T16:16:28.428Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T10:45:21.042Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T10:45:34.816Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T10:53:06.550Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T10:53:16.821Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T10:53:26.134Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T10:55:38.133Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T10:56:30.231Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T10:58:17.945Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T10:58:51.313Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_REGISTERED | Docket: IWD-2026-0007 Building: 7 Priority: Minor
+[2026-06-14T11:00:56.556Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:01:17.946Z] [JE] sidd@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-14T11:01:44.931Z] [JE] sidd@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-14T11:01:54.204Z] [JE] sidd@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-14T11:02:03.217Z] [JE] sidd@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-14T11:03:03.216Z] [JE] je@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-14T11:03:13.073Z] [JE] je@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:04:59.200Z] [JE] je@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:05:18.212Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:05:54.459Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 1
+[2026-06-14T11:06:02.865Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:06:18.837Z] [JE] je@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:10:13.984Z] [JE] je@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:10:27.973Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:11:13.049Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:12:11.286Z] [JE] je.civil@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-14T11:12:18.452Z] [JE] je.civil@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-14T11:12:32.486Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:12:56.951Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 1
+[2026-06-14T11:20:22.280Z] [Dean] dean@iitgoa.ac.in | STAFF_CREATED | Staff: Siddharth (sidd@iitgoa.ac.in) Role: JE
+[2026-06-14T11:21:35.230Z] [Dean] dean@iitgoa.ac.in | STAFF_DELETED | Staff: Siddharth (sidd@iitgoa.ac.in) ID: 14
+[2026-06-14T11:22:21.471Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 10
+[2026-06-14T11:23:04.275Z] [Dean] dean@iitgoa.ac.in | USER_CREATED | User: Siddharth (suryavanshi.siddharth.23033@iitgoa.ac.in) Role: User
+[2026-06-14T11:23:40.463Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:23:56.426Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:25:21.121Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:25:32.349Z] [JE] je@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:26:13.423Z] [JE] je@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:26:59.122Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:27:43.420Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_REGISTERED | Docket: IWD-2026-0008 Building: 7 Priority: Minor
+[2026-06-14T11:29:06.500Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:29:18.657Z] [JE] je@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:33:34.223Z] [JE] je@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:34:54.654Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:35:24.123Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 10
+[2026-06-14T11:35:36.191Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:35:48.501Z] [JE] je@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:40:01.540Z] [JE] je@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T11:40:13.413Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T11:41:08.908Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 10
+[2026-06-14T11:44:41.595Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 10
+[2026-06-14T11:49:44.702Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 10
+[2026-06-14T11:50:14.397Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 10
+[2026-06-14T11:50:42.763Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 10
+[2026-06-14T11:51:05.393Z] [Dean] dean@iitgoa.ac.in | STAFF_DELETED | Staff: Rajesh Kumar (je@iitgoa.ac.in) ID: 10
+[2026-06-14T11:51:39.902Z] [Dean] dean@iitgoa.ac.in | STAFF_CREATED | Staff: Siddharth (sidd@iitgoa.ac.in) Role: JE
+[2026-06-14T11:54:05.517Z] [Dean] dean@iitgoa.ac.in | STAFF_DELETED | Staff: Siddharth (sidd@iitgoa.ac.in) ID: 15
+[2026-06-14T11:55:07.265Z] [Dean] dean@iitgoa.ac.in | STAFF_CREATED | Staff: Siddharth (sidd@iitgoa.ac.in) Role: JE
+[2026-06-14T11:55:32.299Z] [Dean] dean@iitgoa.ac.in | BUILDING_JE_UPDATED | Building ID: 7 JE: Unassigned
+[2026-06-14T12:01:20.617Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 16
+[2026-06-14T12:02:41.406Z] [Dean] dean@iitgoa.ac.in | BUILDING_CREATED | Building: Boys Hostel 2
+[2026-06-14T12:02:56.049Z] [Dean] dean@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 16
+[2026-06-14T12:03:17.770Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T12:03:41.110Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T12:29:19.446Z] [JE] sidd@iitgoa.ac.in | FEEDBACK_SUBMITTED | Complaint ID: 1 Rating: 5/5
+[2026-06-14T12:45:22.174Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T12:45:43.611Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T12:46:07.324Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T12:47:28.696Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T12:48:09.571Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | PASSWORD_CHANGED | Self-service password change for User ID: 19
+[2026-06-14T12:48:19.363Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T12:48:29.480Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T12:48:59.031Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_REGISTERED | Docket: IWD-2026-0009 Building: 6 Priority: Minor
+[2026-06-14T12:49:16.614Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T12:49:38.102Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-14T12:50:00.075Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_STATUS_CHANGED | Complaint ID: 8 New Status: Resolved
+[2026-06-14T12:50:34.732Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-14T12:50:50.488Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-14T12:51:04.441Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-16T06:44:46.182Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-16T06:45:00.133Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-06-16T06:45:18.840Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login

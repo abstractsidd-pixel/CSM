@@ -4,7 +4,7 @@ import { cookies } from "next/headers"
 import { db } from "@/lib/db"
 import { staff, users } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
-import { sign, unsign } from "@/lib/session-crypto"
+import { encryptSession, decryptSession } from "@/lib/session-crypto"
 import type { Role } from "@/lib/constants"
 
 const COOKIE = "cms_session"
@@ -32,9 +32,7 @@ export async function getSession(): Promise<Session | null> {
   const raw = store.get(COOKIE)?.value
   if (!raw) return null
   try {
-    const payload = await unsign(raw)
-    if (!payload) return null
-    const data = JSON.parse(payload)
+    const data = await decryptSession(raw)
     return isValidSession(data) ? data : null
   } catch {
     return null
@@ -43,8 +41,8 @@ export async function getSession(): Promise<Session | null> {
 
 async function setSessionCookie(session: Session) {
   const store = await cookies()
-  const signed = await sign(JSON.stringify(session))
-  store.set(COOKIE, signed, {
+  const encrypted = await encryptSession(session)
+  store.set(COOKIE, encrypted, {
     httpOnly: true,
     sameSite: "lax",
     secure: true,

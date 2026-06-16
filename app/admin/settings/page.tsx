@@ -36,6 +36,7 @@ import Link from "next/link"
 import { StaffManager } from "@/components/admin/staff-manager"
 import { ChangePasswordForm } from "@/components/admin/change-password"
 import { CreateStaffForm } from "@/components/admin/create-staff-form"
+import { LogDownload } from "@/components/admin/log-download"
 
 export const dynamic = "force-dynamic"
 
@@ -137,7 +138,12 @@ export default async function SettingsPage() {
                     <TableCell className="font-mono text-xs">{building.code}</TableCell>
                     <TableCell>{building.floors}</TableCell>
                     <TableCell>{building.area || "-"}</TableCell>
-                    <TableCell>{staffName(building.jeId)}</TableCell>
+                    <TableCell>
+                      {staff
+                        .filter((s) => s.role === "JE" && s.buildingId === building.id)
+                        .map((s) => s.name)
+                        .join(", ") || "-"}
+                    </TableCell>
                     <TableCell className="text-right">
                       <form action={async () => { "use server"; await deleteBuilding(building.id) }}>
                         <Button variant="ghost" size="sm" type="submit">
@@ -163,16 +169,6 @@ export default async function SettingsPage() {
               <Field name="code" label="Building Code" placeholder="ACAD-I" required />
               <Field name="floors" label="Floors" type="number" defaultValue="1" min="1" />
               <Field name="area" label="Area" placeholder="North campus" />
-              <FormSelect name="jeId" label="JE Assigned" defaultValue="">
-                <option value="">Unassigned</option>
-                {staff
-                  .filter((member) => member.role === "JE")
-                  .map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name}
-                    </option>
-                  ))}
-              </FormSelect>
               <Button type="submit">Add Building</Button>
             </form>
           </CardContent>
@@ -231,7 +227,6 @@ export default async function SettingsPage() {
               <FormSelect name="level" label="Level" defaultValue="1">
                 <option value="1">Category</option>
                 <option value="2">Sub-category</option>
-                <option value="3">Complaint Type</option>
               </FormSelect>
               <FormSelect name="parentId" label="Parent" defaultValue="">
                 <option value="">No parent</option>
@@ -339,6 +334,23 @@ export default async function SettingsPage() {
                   <Button type="submit">Save Template</Button>
                 </form>
               ))}
+            </CardContent>
+          </Card>
+        </section>
+      )}
+
+      {/* Activity Log Download — EE/Dean only */}
+      {canManageStaff && (
+        <section>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Clock className="size-4 text-primary" />
+                Activity Log
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LogDownload />
             </CardContent>
           </Card>
         </section>

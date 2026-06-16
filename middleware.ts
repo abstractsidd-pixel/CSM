@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { unsign } from "@/lib/session-crypto"
+import { decryptSession } from "@/lib/session-crypto"
 import { isAdminRole } from "@/lib/constants"
 import type { Role } from "@/lib/constants"
 
@@ -16,9 +16,9 @@ type Session = {
 
 async function getSessionFromMiddleware(raw: string): Promise<Session | null> {
   try {
-    const payload = await unsign(raw)
-    if (!payload) return null
-    return JSON.parse(payload) as Session
+    const data = await decryptSession(raw)
+    if (!data) return null
+    return data as Session
   } catch {
     return null
   }

@@ -16,7 +16,7 @@ import bcrypt from "bcryptjs"
 import { logActivity } from "@/lib/audit-log"
 import { getSession } from "@/lib/session"
 import { checkRateLimit } from "@/lib/rate-limit"
-import { isAdminRole, ROLES } from "@/lib/constants"
+import { isAdminRole, ROLES, ADMIN_ROLES, PRIORITIES } from "@/lib/constants"
 import type { Role } from "@/lib/constants"
 
 const MUTATION_LIMIT = 30
@@ -113,23 +113,29 @@ export async function createStaff(formData: FormData) {
     aeId: formData.get("aeId") ? Number(formData.get("aeId")) : null,
   }
 
-  const existing = await db.select().from(users).where(eq(users.email, staffData.email)).limit(1)
-  if (existing.length > 0) {
-    await db.update(users).set({
-      name: staffData.name,
-      role: staffData.role,
-      passwordHash,
-    }).where(eq(users.email, staffData.email))
-  } else {
-    await db.insert(users).values({
-      email: staffData.email,
-      name: staffData.name,
-      role: staffData.role,
-      passwordHash,
-    })
+  if (!ADMIN_ROLES.includes(staffData.role as typeof ADMIN_ROLES[number])) {
+    return { error: "Invalid role. Must be JE, AE, EE, or Dean." }
   }
 
-  await db.insert(staff).values(staffData)
+  await db.transaction(async (tx) => {
+    const existing = await tx.select().from(users).where(eq(users.email, staffData.email)).limit(1)
+    if (existing.length > 0) {
+      await tx.update(users).set({
+        name: staffData.name,
+        role: staffData.role,
+        passwordHash,
+      }).where(eq(users.email, staffData.email))
+    } else {
+      await tx.insert(users).values({
+        email: staffData.email,
+        name: staffData.name,
+        role: staffData.role,
+        passwordHash,
+      })
+    }
+    await tx.insert(staff).values(staffData)
+  })
+
   await logActivity(session?.email || "system", session?.role || "system", "STAFF_CREATED", `Staff: ${staffData.name} (${staffData.email}) Role: ${staffData.role}`)
   revalidatePath("/admin/settings")
   return { ok: true }
@@ -242,6 +248,11 @@ export async function updateSla(formData: FormData) {
   const session = await getSession()
   const priority = formData.get("priority") as string
   const hours = Number(formData.get("hours"))
+
+  if (!PRIORITIES.includes(priority as typeof PRIORITIES[number])) {
+    return { error: "Invalid priority." }
+  }
+
   await db.update(slaRules).set({ hours }).where(eq(slaRules.priority, priority))
   await logActivity(session?.email || "system", session?.role || "system", "SLA_UPDATED", `Priority: ${priority} Hours: ${hours}`)
   revalidatePath("/admin/settings")
@@ -348,6 +359,11 @@ export async function updateUser(formData: FormData) {
     return { error: "Invalid role." }
   }
 
+  const existingEmail = await db.select().from(users).where(eq(users.email, email)).limit(1)
+  if (existingEmail.length > 0 && existingEmail[0].id !== id) {
+    return { error: "A user with this email already exists." }
+  }
+
   await db.update(users).set({ name, email, role }).where(eq(users.id, id))
   await logActivity(session?.email || "system", session?.role || "system", "USER_UPDATED", `User ID: ${id} Name: ${name} Email: ${email} Role: ${role}`)
   revalidatePath("/admin/users")
@@ -368,8 +384,17 @@ export async function createUsersBulk(rows: { name: string; email: string; passw
     if (pwError) return { error: `Password error for ${r.email}: ${pwError}` }
   }
 
+  const existingEmails = await db.select({ email: users.email }).from(users)
+  const existingSet = new Set(existingEmails.map((e) => e.email))
+  const newRows = rows.filter((r) => !existingSet.has(r.email))
+  const skipped = rows.length - newRows.length
+
+  if (newRows.length === 0) {
+    return { ok: true, count: 0, skipped, error: skipped > 0 ? `All ${skipped} email(s) already exist.` : undefined }
+  }
+
   const values = await Promise.all(
-    rows.map(async (r) => ({
+    newRows.map(async (r) => ({
       name: r.name,
       email: r.email,
       role: "User" as const,
@@ -377,9 +402,9 @@ export async function createUsersBulk(rows: { name: string; email: string; passw
     })),
   )
   await db.insert(users).values(values)
-  await logActivity(session?.email || "system", session?.role || "system", "USERS_BULK_CREATED", `${rows.length} users imported`)
+  await logActivity(session?.email || "system", session?.role || "system", "USERS_BULK_CREATED", `${newRows.length} users imported, ${skipped} skipped`)
   revalidatePath("/admin/users")
-  return { ok: true, count: rows.length }
+  return { ok: true, count: newRows.length, skipped }
 }
 
 export async function deleteStaff(id: number) {
@@ -394,9 +419,11 @@ export async function deleteStaff(id: number) {
   const staffName = rows[0]?.name || "unknown"
   const staffEmail = rows[0]?.email || "unknown"
   if (rows[0]) {
-    await db.delete(users).where(eq(users.email, rows[0].email))
+    await db.transaction(async (tx) => {
+      await tx.delete(users).where(eq(users.email, rows[0].email))
+      await tx.delete(staff).where(eq(staff.id, id))
+    })
   }
-  await db.delete(staff).where(eq(staff.id, id))
   await logActivity(session?.email || "system", session?.role || "system", "STAFF_DELETED", `Staff: ${staffName} (${staffEmail}) ID: ${id}`)
   revalidatePath("/admin/settings")
 }
@@ -412,11 +439,17 @@ export async function updateStaff(formData: FormData) {
   const id = Number(formData.get("id"))
   if (!id) return { error: "Staff ID is required." }
 
+  const email = formData.get("email") as string
+  const existingEmail = await db.select().from(users).where(eq(users.email, email)).limit(1)
+  if (existingEmail.length > 0 && existingEmail[0].id !== id) {
+    return { error: "A user with this email already exists." }
+  }
+
   await db
     .update(staff)
     .set({
       name: formData.get("name") as string,
-      email: formData.get("email") as string,
+      email,
       role: (formData.get("role") as string) || "JE",
       subdivision: (formData.get("subdivision") as string) || null,
       buildingId: formData.get("buildingId") ? Number(formData.get("buildingId")) : null,
@@ -460,10 +493,12 @@ export async function changeOwnPassword(formData: FormData) {
   const session = await getSession()
   if (!session) return { error: "Unauthorized." }
 
+  const currentPassword = formData.get("currentPassword") as string
   const password = formData.get("password") as string
   const userId = Number(formData.get("userId"))
 
   if (!userId || !password) return { error: "Password is required." }
+  if (!currentPassword) return { error: "Current password is required." }
 
   if (session.userId !== userId) {
     return { error: "You can only change your own password." }
@@ -471,6 +506,12 @@ export async function changeOwnPassword(formData: FormData) {
 
   const pwError = validatePassword(password)
   if (pwError) return { error: pwError }
+
+  const userRows = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+  if (!userRows[0]) return { error: "User not found." }
+
+  const valid = await bcrypt.compare(currentPassword, userRows[0].passwordHash)
+  if (!valid) return { error: "Current password is incorrect." }
 
   const passwordHash = await bcrypt.hash(password, 12)
   await db.update(users).set({ passwordHash }).where(eq(users.id, userId))
