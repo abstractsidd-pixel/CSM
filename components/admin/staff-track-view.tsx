@@ -114,7 +114,7 @@ export function StaffTrackView({
               <Input
                 value={docket}
                 onChange={(e) => setDocket(e.target.value)}
-                placeholder="e.g. IWD-2026-0001"
+                placeholder="e.g. IITGoa/CMS/AKB/ELC/2026/0001"
                 onKeyDown={(e) => e.key === "Enter" && search()}
               />
               <Button onClick={search}>
@@ -279,7 +279,7 @@ export function StaffTrackView({
             <Input
               value={docket}
               onChange={(e) => setDocket(e.target.value)}
-              placeholder="e.g. IWD-2026-0001"
+              placeholder="e.g. IITGoa/CMS/AKB/ELC/2026/0001"
               onKeyDown={(e) => e.key === "Enter" && search()}
             />
             <Button onClick={search}>

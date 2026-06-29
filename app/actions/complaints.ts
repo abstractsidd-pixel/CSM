@@ -6,10 +6,11 @@ import {
   complaintLogs,
   feedback,
   buildings,
+  categories,
   slaRules,
   surveys,
 } from "@/lib/db/schema"
-import { and, eq } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/audit-log"
 import { getSession } from "@/lib/session"
@@ -40,11 +41,39 @@ function pad(n: number, len = 4) {
   return String(n).padStart(len, "0")
 }
 
-async function generateDocket() {
+async function generateDocket(buildingId: number, categoryId: number | null) {
   const year = new Date().getFullYear()
-  const all = await db.select({ id: complaints.id }).from(complaints)
-  const seq = all.length + 1
-  return `IWD-${year}-${pad(seq)}`
+
+  const buildingRows = await db
+    .select({ code: buildings.code })
+    .from(buildings)
+    .where(eq(buildings.id, buildingId))
+    .limit(1)
+  const buildingCode = buildingRows[0]?.code ?? "UNK"
+
+  let categoryCode = "GEN"
+  if (categoryId) {
+    const catRows = await db
+      .select({ code: categories.code })
+      .from(categories)
+      .where(eq(categories.id, categoryId))
+      .limit(1)
+    categoryCode = catRows[0]?.code ?? "GEN"
+  }
+
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(complaints)
+    .where(
+      and(
+        sql`EXTRACT(YEAR FROM ${complaints.createdAt}) = ${year}`,
+        sql`${complaints.buildingId} = ${buildingId}`,
+        sql`COALESCE(${complaints.categoryId}, 0) = COALESCE(${categoryId ?? 0}, 0)`
+      )
+    )
+
+  const seq = count + 1
+  return `IITGoa/CMS/${buildingCode}/${categoryCode}/${year}/${pad(seq)}`
 }
 
 async function dueDateFor(priority: string) {
@@ -85,7 +114,7 @@ export async function registerComplaint(formData: FormData) {
     return { error: "Photo URL must use HTTPS." }
   }
 
-  const docket = await generateDocket()
+  const docket = await generateDocket(buildingId, categoryId)
   const due = await dueDateFor(priority)
   const building = await db.select().from(buildings).where(eq(buildings.id, buildingId)).limit(1)
 

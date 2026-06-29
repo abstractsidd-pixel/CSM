@@ -167,3 +167,14 @@
 [2026-06-16T06:44:46.182Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
 [2026-06-16T06:45:00.133Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
 [2026-06-16T06:45:18.840Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-16T07:35:28.807Z] [Dean] dean@iitgoa.ac.in | COMPLAINT_REGISTERED | Docket: IITGoa/CMS/B2/ELEC/2026/0001 Building: 9 Priority: Minor
+[2026-06-16T07:37:10.993Z] [Dean] dean@iitgoa.ac.in | COMPLAINT_REGISTERED | Docket: IITGoa/CMS/LIB/ELEC/2026/0001 Building: 5 Priority: Minor
+[2026-06-16T07:37:25.161Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-16T07:37:36.581Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-16T07:38:27.580Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 10 Technician: Mahesh Pednekar
+[2026-06-16T07:38:48.162Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_STATUS_CHANGED | Complaint ID: 10 New Status: Resolved
+[2026-06-16T07:39:01.185Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-16T07:39:15.380Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-16T07:39:43.465Z] [Dean] dean@iitgoa.ac.in | FEEDBACK_SUBMITTED | Complaint ID: 10 Rating: 4/5
+[2026-06-16T07:40:23.282Z] [Dean] dean@iitgoa.ac.in | COMPLAINT_REACTIVATED | Complaint ID: 10 Docket: IITGoa/CMS/B2/ELEC/2026/0001 Reason: Got an Issue
+[2026-06-16T07:41:10.688Z] [Dean] dean@iitgoa.ac.in | COMPLAINT_STATUS_CHANGED | Complaint ID: 10 New Status: Resolved
