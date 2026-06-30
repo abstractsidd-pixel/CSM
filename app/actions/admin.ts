@@ -68,6 +68,7 @@ export async function createBuilding(formData: FormData) {
     code: formData.get("code") as string,
     floors: Number(formData.get("floors")) || 1,
     area: (formData.get("area") as string) || null,
+    isHostel: formData.get("isHostel") === "true",
     jeId: formData.get("jeId") ? Number(formData.get("jeId")) : null,
   })
   await logActivity(session?.email || "system", session?.role || "system", "BUILDING_CREATED", `Building: ${name}`)
@@ -108,13 +109,14 @@ export async function createStaff(formData: FormData) {
     name: formData.get("name") as string,
     email: formData.get("email") as string,
     role: (formData.get("role") as string) || "JE",
-    subdivision: (formData.get("subdivision") as string) || null,
+    subdivision: ((formData.get("subdivision") as string) || "").trim() || null,
     buildingId: formData.get("buildingId") ? Number(formData.get("buildingId")) : null,
     aeId: formData.get("aeId") ? Number(formData.get("aeId")) : null,
   }
 
-  if (!ADMIN_ROLES.includes(staffData.role as typeof ADMIN_ROLES[number])) {
-    return { error: "Invalid role. Must be JE, AE, EE, or Dean." }
+  const validRoles = ["HallOffice", ...ADMIN_ROLES]
+  if (!validRoles.includes(staffData.role as typeof validRoles[number])) {
+    return { error: "Invalid role. Must be HallOffice, JE, AE, EE, or Dean." }
   }
 
   await db.transaction(async (tx) => {
@@ -236,6 +238,46 @@ export async function deleteCategory(id: number) {
   await db.delete(categories).where(eq(categories.id, id))
   await logActivity(session?.email || "system", session?.role || "system", "CATEGORY_DELETED", `Category ID: ${id}`)
   revalidatePath("/admin/settings")
+}
+
+export async function createDivision(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const roleError = await requireEeOrDean()
+  if (roleError) return { error: roleError }
+
+  const session = await getSession()
+  const name = (formData.get("name") as string)?.trim()
+  if (!name) return { error: "Division name is required." }
+
+  const existing = await db.select().from(categories).where(eq(categories.name, name)).limit(1)
+  if (existing.length > 0) return { error: "A division with this name already exists." }
+
+  await db.insert(categories).values({ name, level: 1 })
+  await logActivity(session?.email || "system", session?.role || "system", "DIVISION_CREATED", `Division: ${name}`)
+  revalidatePath("/admin/settings")
+  return { ok: true }
+}
+
+export async function deleteDivision(id: number) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const roleError = await requireEeOrDean()
+  if (roleError) return { error: roleError }
+
+  const session = await getSession()
+  const row = await db.select().from(categories).where(eq(categories.id, id)).limit(1)
+  if (row[0]?.level !== 1) return { error: "Only level-1 categories (divisions) can be deleted." }
+
+  const hasSubcategories = await db.select().from(categories).where(eq(categories.parentId, id)).limit(1)
+  if (hasSubcategories.length > 0) return { error: "Cannot delete a division that has subcategories. Remove them first." }
+
+  await db.delete(categories).where(eq(categories.id, id))
+  await logActivity(session?.email || "system", session?.role || "system", "DIVISION_DELETED", `Division ID: ${id} Name: ${row[0]?.name}`)
+  revalidatePath("/admin/settings")
+  return { ok: true }
 }
 
 export async function updateSla(formData: FormData) {
@@ -451,7 +493,7 @@ export async function updateStaff(formData: FormData) {
       name: formData.get("name") as string,
       email,
       role: (formData.get("role") as string) || "JE",
-      subdivision: (formData.get("subdivision") as string) || null,
+      subdivision: ((formData.get("subdivision") as string) || "").trim() || null,
       buildingId: formData.get("buildingId") ? Number(formData.get("buildingId")) : null,
       aeId: formData.get("aeId") ? Number(formData.get("aeId")) : null,
     })

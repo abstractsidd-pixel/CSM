@@ -6,6 +6,7 @@ import {
   getBuildings,
   getTechnicians,
   getStaff,
+  getCategories,
 } from "@/lib/queries"
 import { getSession } from "@/lib/session"
 import { computeStats } from "@/lib/stats"
@@ -22,24 +23,35 @@ import { StatusChart } from "@/components/admin/status-chart"
 
 export default async function AdminDashboard() {
   const session = await getSession()
-  const [complaints, buildings, technicians, allStaff] = await Promise.all([
+  const [complaints, buildings, technicians, allStaff, categories] = await Promise.all([
     getAllComplaints(),
     getBuildings(),
     getTechnicians(),
     getStaff(),
+    getCategories(),
   ])
+
+  const visibleStatuses = ["Registered", "Assigned", "In Progress", "Resolved", "Closed", "Reactivated"]
 
   const scoped =
     session?.role === "JE" && session.staffId
       ? (() => {
-          const assignedBuildingIds = allStaff
-            .filter((s) => s.id === session.staffId && s.buildingId)
-            .map((s) => s.buildingId as number)
+          const jeStaff = allStaff.find((s) => s.id === session.staffId)
+          const division = jeStaff?.subdivision?.trim()
+          if (!division) return []
+
+          const divisionCategoryIds = categories
+            .filter((c) => c.level === 1 && c.name === division)
+            .map((c) => c.id)
+
           return complaints.filter(
-            (c) => assignedBuildingIds.includes(c.buildingId),
+            (c) =>
+              c.categoryId &&
+              divisionCategoryIds.includes(c.categoryId) &&
+              visibleStatuses.includes(c.status),
           )
         })()
-      : complaints
+      : complaints.filter((c) => visibleStatuses.includes(c.status))
 
   const stats = computeStats(scoped)
   const recent = scoped.slice(0, 8)

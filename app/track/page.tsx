@@ -7,6 +7,7 @@ import {
   getBuildings,
   getTechnicians,
   getFeedbackForComplaint,
+  getCommentsForComplaint,
 } from "@/lib/queries"
 import { getSession } from "@/lib/session"
 import { redirect } from "next/navigation"
@@ -28,12 +29,14 @@ export default async function TrackPage({
   let complaint = null
   let logs: Awaited<ReturnType<typeof getLogsForComplaint>> = []
   let feedback = null
+  let comments: Awaited<ReturnType<typeof getCommentsForComplaint>> = []
   if (params.docket) {
     const found = await getComplaintByDocket(params.docket.trim())
     if (found && found.complainantEmail === session.email) {
       complaint = found
       logs = await getLogsForComplaint(complaint.id)
       feedback = await getFeedbackForComplaint(complaint.id)
+      comments = await getCommentsForComplaint(complaint.id)
     }
   }
 
@@ -55,9 +58,13 @@ export default async function TrackPage({
           complaint={complaint}
           logs={logs}
           feedback={feedback}
+          comments={comments}
           buildings={buildings}
           technicians={technicians}
           myComplaints={myComplaints}
+          sessionEmail={session.email}
+          sessionName={session.name}
+          sessionRole={session.role}
         />
       </main>
     </div>

@@ -31,16 +31,23 @@ interface Building {
   name: string
 }
 
-const STAFF_ROLES = ["JE", "AE", "EE", "Dean"]
-const EDITABLE_ROLES = ["JE", "AE"]
+interface Division {
+  id: number
+  name: string
+}
+
+const STAFF_ROLES = ["HallOffice", "JE", "AE", "EE", "Dean"]
+const EDITABLE_ROLES = ["HallOffice", "JE", "AE"]
 
 export function StaffManager({
   staff,
   buildings,
+  divisions,
   sessionRole,
 }: {
   staff: StaffMember[]
   buildings: Building[]
+  divisions: Division[]
   sessionRole: string
 }) {
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -106,7 +113,7 @@ export function StaffManager({
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
-            <TableHead>Subdivision</TableHead>
+            <TableHead>Division</TableHead>
             <TableHead>Building</TableHead>
             <TableHead>Reports To (AE)</TableHead>
             {canEditDelete && <TableHead className="text-right">Actions</TableHead>}
@@ -144,11 +151,18 @@ export function StaffManager({
                   </select>
                 </TableCell>
                 <TableCell>
-                  <Input
+                  <select
                     value={editForm.subdivision || ""}
                     onChange={(e) => setEditForm({ ...editForm, subdivision: e.target.value || null })}
-                    className="h-8 text-xs"
-                  />
+                    className="h-8 w-full rounded-lg border border-input bg-background px-2 text-xs outline-none"
+                  >
+                    <option value="">None</option>
+                    {divisions.map((div) => (
+                      <option key={div.id} value={div.name}>
+                        {div.name}
+                      </option>
+                    ))}
+                  </select>
                 </TableCell>
                 <TableCell>
                   <select

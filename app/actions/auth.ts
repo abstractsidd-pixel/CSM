@@ -50,6 +50,9 @@ export async function credentialLogin(email: string, password: string, role: Rol
   if (role === "User") {
     return { ok: true, redirectTo: "/student" }
   }
+  if (role === "HallOffice") {
+    return { ok: true, redirectTo: "/hall-office" }
+  }
   return { ok: true, redirectTo: "/admin" }
 }
 

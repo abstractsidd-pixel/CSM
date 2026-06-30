@@ -17,7 +17,7 @@ import {
 import { registerComplaint } from "@/app/actions/complaints"
 import { PRIORITIES } from "@/lib/constants"
 import { toast } from "sonner"
-import { CheckCircle2, Copy } from "lucide-react"
+import { CheckCircle2, Copy, Upload, X } from "lucide-react"
 import type { BuildingRow, CategoryRow } from "@/lib/queries"
 
 type Sla = { priority: string; hours: number; label: string }
@@ -43,6 +43,9 @@ export function RegisterForm({
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [subcategoryId, setSubcategoryId] = useState<string | null>(null)
   const [priority, setPriority] = useState<string | null>("Minor")
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoPath, setPhotoPath] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   const parents = useMemo(() => categories.filter((c) => c.level === 1), [categories])
   const subs = useMemo(
@@ -53,6 +56,40 @@ export function RegisterForm({
 
   const slaLabel = sla.find((s) => s.priority === priority)?.label
 
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File must be under 5MB.")
+      return
+    }
+
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("photo", file)
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Upload failed.")
+        return
+      }
+      setPhotoPath(data.path)
+      setPhotoPreview(URL.createObjectURL(file))
+      toast.success("Photo uploaded.")
+    } catch {
+      toast.error("Upload failed.")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function removePhoto() {
+    setPhotoPath(null)
+    setPhotoPreview(null)
+  }
+
   function onSubmit(formData: FormData) {
     if (!buildingId) {
       toast.error("Please select a building.")
@@ -60,6 +97,8 @@ export function RegisterForm({
     }
     formData.set("buildingId", buildingId)
     formData.set("priority", priority ?? "Minor")
+    if (photoPath) formData.set("photoPath", photoPath)
+
     if (!isOther) {
       formData.set("categoryId", categoryId ?? "")
       formData.set("subcategoryId", subcategoryId ?? "")
@@ -205,9 +244,13 @@ export function RegisterForm({
             )}
           </div>
 
+          <Field label="Description" required>
+            <Textarea name="description" placeholder="Describe the issue you are facing in detail" rows={3} required />
+          </Field>
+
           {isOther && (
-            <Field label="Describe the issue" required>
-              <Textarea name="otherText" placeholder="Describe the issue in detail" rows={3} />
+            <Field label="Other details" required>
+              <Textarea name="otherText" placeholder="Additional details" rows={2} />
             </Field>
           )}
 
@@ -229,14 +272,47 @@ export function RegisterForm({
                 <p className="mt-1 text-xs text-muted-foreground">Target resolution: {slaLabel}</p>
               )}
             </Field>
-            <Field label="Preferred visit time">
-              <Input type="datetime-local" name="preferredAt" />
-            </Field>
           </div>
 
-          <Field label="Photo URL (optional)">
-            <Input name="photoUrl" placeholder="https://..." />
-          </Field>
+          <div className="flex flex-col gap-3">
+            <Label className="text-sm">Preferred Visit Times <span className="text-destructive">*</span></Label>
+            <p className="text-xs text-muted-foreground">Provide up to 3 time slots. At least one is required.</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <TimeSlotField index={1} />
+              <TimeSlotField index={2} />
+              <TimeSlotField index={3} />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-sm">Photo (optional)</Label>
+            {photoPreview ? (
+              <div className="relative inline-block w-fit">
+                <img src={photoPreview} alt="Preview" className="h-32 rounded-lg border border-border object-cover" />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -right-2 -top-2 size-6"
+                  onClick={removePhoto}
+                >
+                  <X className="size-3" />
+                </Button>
+              </div>
+            ) : (
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:bg-secondary/50">
+                <Upload className="size-4" />
+                {uploading ? "Uploading..." : "Click to upload photo (JPEG/PNG, max 5MB)"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg,image/webp"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                  disabled={uploading}
+                />
+              </label>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Your name">
@@ -259,6 +335,18 @@ export function RegisterForm({
         </form>
       </CardContent>
     </Card>
+  )
+}
+
+function TimeSlotField({ index }: { index: number }) {
+  return (
+    <div className="flex flex-col gap-1.5 rounded-lg border border-border p-3">
+      <Label className="text-xs font-medium">Slot {index}</Label>
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-[11px] text-muted-foreground">Date & Time</Label>
+        <Input type="datetime-local" name={`preferredTime${index}`} className="h-8 text-xs" />
+      </div>
+    </div>
   )
 }
 

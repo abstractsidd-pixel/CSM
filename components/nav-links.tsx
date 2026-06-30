@@ -40,8 +40,13 @@ const EE_DEAN_LINKS = [
   { href: "/register", label: "Register" },
 ]
 
+const HALL_OFFICE_LINKS = [
+  { href: "/hall-office", label: "Review Queue" },
+]
+
 const ROLE_LINKS: Record<string, typeof USER_LINKS> = {
   User: USER_LINKS,
+  HallOffice: HALL_OFFICE_LINKS,
   JE: JE_LINKS,
   AE: AE_LINKS,
   EE: EE_DEAN_LINKS,

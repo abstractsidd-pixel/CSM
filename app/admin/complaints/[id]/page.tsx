@@ -9,11 +9,14 @@ import {
   getTechnicians,
   getFeedbackForComplaint,
   getStaff,
+  getCategories,
+  getCommentsForComplaint,
 } from "@/lib/queries"
 import { getSession } from "@/lib/session"
 import { StatusBadge, PriorityBadge, formatDate, slaStatus } from "@/components/shared-ui"
-import { ArrowLeft, MapPin, User, Mail, Clock, Image as ImageIcon } from "lucide-react"
+import { ArrowLeft, MapPin, User, Mail, Clock, Image as ImageIcon, MessageSquare } from "lucide-react"
 import { ComplaintActions } from "@/components/admin/complaint-actions"
+import { CommentSection } from "@/components/admin/comment-section"
 import { Star } from "lucide-react"
 
 export default async function ComplaintDetailPage({
@@ -26,19 +29,26 @@ export default async function ComplaintDetailPage({
   if (!complaint) notFound()
 
   const session = await getSession()
-  const [logs, buildings, technicians, feedback] = await Promise.all([
+  const [logs, buildings, technicians, feedback, allStaff, categories, comments] = await Promise.all([
     getLogsForComplaint(complaint.id),
     getBuildings(),
     getTechnicians(),
     getFeedbackForComplaint(complaint.id),
+    getStaff(),
+    getCategories(),
+    getCommentsForComplaint(complaint.id),
   ])
 
   if (session?.role === "JE" && session.staffId) {
-    const jeStaff = await getStaff()
-    const assignedBuildingIds = jeStaff
-      .filter((s) => s.id === session.staffId && s.buildingId)
-      .map((s) => s.buildingId as number)
-    if (!assignedBuildingIds.includes(complaint.buildingId)) {
+    const jeStaff = allStaff.find((s) => s.id === session.staffId)
+    const division = jeStaff?.subdivision?.trim()
+    if (!division) notFound()
+
+    const divisionCategoryIds = categories
+      .filter((c) => c.level === 1 && c.name === division)
+      .map((c) => c.id)
+
+    if (!complaint.categoryId || !divisionCategoryIds.includes(complaint.categoryId)) {
       notFound()
     }
   }
@@ -47,11 +57,19 @@ export default async function ComplaintDetailPage({
   const tech = technicians.find((t) => t.id === complaint.assignedTechnicianId)
   const sla = slaStatus(complaint.dueAt, complaint.closedAt)
 
+  const timeSlots = [
+    { slot: 1, time: complaint.preferredTime1 },
+    { slot: 2, time: complaint.preferredTime2 },
+    { slot: 3, time: complaint.preferredTime3 },
+  ].filter((s) => s.time != null)
+
+  const isUser = session?.role === "User"
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <Button variant="ghost" size="sm">
-          <Link href="/admin/complaints">
+          <Link href={isUser ? "/student" : "/admin/complaints"}>
             <ArrowLeft className="size-4" />
             Back
           </Link>
@@ -87,14 +105,23 @@ export default async function ComplaintDetailPage({
               <Detail icon={Clock} label="Registered">
                 {formatDate(complaint.createdAt)}
               </Detail>
-              <Detail icon={Clock} label="Preferred Visit">
-                {formatDate(complaint.preferredAt)}
-              </Detail>
               <Detail icon={Clock} label="SLA Due">
                 {formatDate(complaint.dueAt)}{" "}
                 <span className={`text-xs font-medium ${sla.className}`}>({sla.label})</span>
               </Detail>
-              {complaint.photoUrl && (
+              {complaint.photoPath && (
+                <Detail icon={ImageIcon} label="Photo">
+                  <a
+                    href={complaint.photoPath}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary underline underline-offset-2"
+                  >
+                    View attachment
+                  </a>
+                </Detail>
+              )}
+              {complaint.photoUrl && !complaint.photoPath && (
                 <Detail icon={ImageIcon} label="Photo">
                   <a
                     href={complaint.photoUrl}
@@ -108,6 +135,32 @@ export default async function ComplaintDetailPage({
               )}
             </CardContent>
           </Card>
+
+          {complaint.description && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-wrap">{complaint.description}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {complaint.photoPath && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Photo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <img
+                  src={complaint.photoPath}
+                  alt="Complaint photo"
+                  className="max-h-80 rounded-lg border border-border object-contain"
+                />
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>
@@ -160,6 +213,14 @@ export default async function ComplaintDetailPage({
               </CardContent>
             </Card>
           )}
+
+          <CommentSection
+            complaintId={complaint.id}
+            comments={comments}
+            sessionEmail={session?.email || ""}
+            sessionName={session?.name || ""}
+            sessionRole={session?.role || "User"}
+          />
         </div>
 
         <div className="flex flex-col gap-6">
@@ -168,6 +229,9 @@ export default async function ComplaintDetailPage({
             technicians={technicians}
             staffLabel={`${session?.name} (${session?.role})`}
             currentTech={tech ? `${tech.name} · ${tech.trade}` : null}
+            categories={categories}
+            sessionRole={session?.role}
+            timeSlots={timeSlots}
           />
         </div>
       </div>

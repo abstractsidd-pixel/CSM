@@ -8,6 +8,7 @@ import { NavLinks } from "@/components/nav-links"
 export async function SiteHeader() {
   const session = await getSession()
   const admin = isAdminRole(session?.role)
+  const isHallOffice = session?.role === "HallOffice"
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -22,7 +23,7 @@ export async function SiteHeader() {
           </span>
         </Link>
 
-        <NavLinks isAdmin={admin} role={session?.role} />
+        <NavLinks isAdmin={admin} role={isHallOffice ? "HallOffice" : session?.role} />
 
         <div className="ml-auto flex items-center gap-2">
           <RoleSwitcher session={session} />

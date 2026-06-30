@@ -19,14 +19,21 @@ interface Building {
   name: string
 }
 
-const STAFF_ROLES = ["JE", "AE", "EE", "Dean"]
+interface Division {
+  id: number
+  name: string
+}
+
+const STAFF_ROLES = ["HallOffice", "JE", "AE", "EE", "Dean"]
 
 export function CreateStaffForm({
   buildings,
   staff,
+  divisions,
 }: {
   buildings: Building[]
   staff: StaffMember[]
+  divisions: Division[]
 }) {
   const [loading, setLoading] = useState(false)
   const [role, setRole] = useState("JE")
@@ -106,7 +113,24 @@ export function CreateStaffForm({
           </select>
         </div>
       )}
-      <Field name="subdivision" label="Subdivision" placeholder="Civil / Electrical / I&S" />
+      {role !== "HallOffice" && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="subdivision">Division</Label>
+          <select
+            id="subdivision"
+            name="subdivision"
+            defaultValue=""
+            className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <option value="">Select Division</option>
+            {divisions.map((div) => (
+              <option key={div.id} value={div.name}>
+                {div.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="buildingId">Assigned Building</Label>
         <select

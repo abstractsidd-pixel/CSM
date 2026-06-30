@@ -2,8 +2,10 @@ import {
   createBuilding,
   createCategory,
   createStaff,
+  createDivision,
   deleteBuilding,
   deleteCategory,
+  deleteDivision,
   updateSla,
   updateTemplate,
 } from "@/app/actions/admin"
@@ -21,16 +23,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ROLES, TRADES } from "@/lib/constants"
+import { ROLES } from "@/lib/constants"
 import {
   getBuildings,
   getCategories,
+  getDivisions,
   getNotificationTemplates,
   getSlaRules,
   getStaff,
   getAllUsers,
 } from "@/lib/queries"
-import { Bell, Building2, Clock, Layers3, ShieldCheck, ShieldAlert, Trash2 } from "lucide-react"
+import { Bell, Building2, Clock, Layers3, ShieldCheck, ShieldAlert, Trash2, Plus } from "lucide-react"
 import { getSession } from "@/lib/session"
 import Link from "next/link"
 import { StaffManager } from "@/components/admin/staff-manager"
@@ -69,9 +72,10 @@ export default async function SettingsPage() {
   const canAddStaff = isAE || isEE || isDean
   const canViewStaff = isAE || isEE || isDean
 
-  const [buildings, categories, staff, slaRules, templates, allUsers] = await Promise.all([
+  const [buildings, categories, divisions, staff, slaRules, templates, allUsers] = await Promise.all([
     getBuildings(),
     getCategories(),
+    getDivisions(),
     getStaff(),
     getSlaRules(),
     getNotificationTemplates(),
@@ -87,6 +91,10 @@ export default async function SettingsPage() {
   const createCategoryAction = async (formData: FormData) => {
     "use server"
     await createCategory(formData)
+  }
+  const createDivisionAction = async (formData: FormData) => {
+    "use server"
+    await createDivision(formData)
   }
   const updateSlaAction = async (formData: FormData) => {
     "use server"
@@ -127,6 +135,7 @@ export default async function SettingsPage() {
                   <TableHead>Code</TableHead>
                   <TableHead>Floors</TableHead>
                   <TableHead>Area</TableHead>
+                  <TableHead>Hostel</TableHead>
                   <TableHead>JE Assigned</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
@@ -138,6 +147,7 @@ export default async function SettingsPage() {
                     <TableCell className="font-mono text-xs">{building.code}</TableCell>
                     <TableCell>{building.floors}</TableCell>
                     <TableCell>{building.area || "-"}</TableCell>
+                    <TableCell>{building.isHostel ? "Yes" : "—"}</TableCell>
                     <TableCell>
                       {staff
                         .filter((s) => s.role === "JE" && s.buildingId === building.id)
@@ -169,11 +179,76 @@ export default async function SettingsPage() {
               <Field name="code" label="Building Code" placeholder="ACAD-I" required />
               <Field name="floors" label="Floors" type="number" defaultValue="1" min="1" />
               <Field name="area" label="Area" placeholder="North campus" />
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="isHostel" value="true" className="rounded border-input" />
+                Hostel building (requires Hall Office review)
+              </label>
               <Button type="submit">Add Building</Button>
             </form>
           </CardContent>
         </Card>
       </section>
+
+      {/* Divisions Master — EE/Dean */}
+      {canManageStaff && (
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Layers3 className="size-4 text-primary" />
+                Divisions Master
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-3 text-sm text-muted-foreground">
+                Divisions are level-1 categories that define complaint types (e.g. Electrical, Plumbing).
+              </p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Division Name</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {divisions.map((div) => (
+                    <TableRow key={div.id}>
+                      <TableCell className="font-medium">{div.name}</TableCell>
+                      <TableCell className="text-right">
+                        <form action={async () => { "use server"; await deleteDivision(div.id) }}>
+                          <Button variant="ghost" size="sm" type="submit">
+                            <Trash2 className="size-3.5" />
+                            Delete
+                          </Button>
+                        </form>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {divisions.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={2} className="py-4 text-center text-sm text-muted-foreground">
+                        No divisions yet. Add one below.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Add Division</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form action={createDivisionAction} className="flex flex-col gap-3">
+                <Field name="name" label="Division Name" placeholder="Electrical" required />
+                <Button type="submit">Add Division</Button>
+              </form>
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
       {/* Categories Master — JE, AE, EE, Dean */}
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -191,7 +266,7 @@ export default async function SettingsPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Level</TableHead>
                   <TableHead>Parent</TableHead>
-                  <TableHead>Trade</TableHead>
+                  <TableHead>Division</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -236,11 +311,11 @@ export default async function SettingsPage() {
                   </option>
                 ))}
               </FormSelect>
-              <FormSelect name="trade" label="Relevant Trade" defaultValue="">
+              <FormSelect name="trade" label="Division" defaultValue="">
                 <option value="">Not mapped</option>
-                {TRADES.map((trade) => (
-                  <option key={trade} value={trade}>
-                    {trade}
+                {divisions.map((div) => (
+                  <option key={div.id} value={div.name}>
+                    {div.name}
                   </option>
                 ))}
               </FormSelect>
@@ -261,7 +336,7 @@ export default async function SettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <StaffManager staff={staff} buildings={buildings} sessionRole={role} />
+              <StaffManager staff={staff} buildings={buildings} divisions={divisions} sessionRole={role} />
             </CardContent>
           </Card>
 
@@ -271,7 +346,7 @@ export default async function SettingsPage() {
                 <CardTitle className="text-base">Add IWD Staff</CardTitle>
               </CardHeader>
               <CardContent>
-                <CreateStaffForm buildings={buildings} staff={staff} />
+                <CreateStaffForm buildings={buildings} staff={staff} divisions={divisions} />
               </CardContent>
             </Card>
           )}

@@ -21,7 +21,7 @@ export type Session = {
 function isValidSession(data: unknown): data is Session {
   if (typeof data !== "object" || data === null) return false
   const obj = data as Record<string, unknown>
-  if (typeof obj.role !== "string" || !["User", "JE", "AE", "EE", "Dean"].includes(obj.role)) return false
+  if (typeof obj.role !== "string" || !["User", "HallOffice", "JE", "AE", "EE", "Dean"].includes(obj.role)) return false
   if (typeof obj.email !== "string" || !obj.email.includes("@")) return false
   if (typeof obj.name !== "string") return false
   return true

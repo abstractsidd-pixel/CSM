@@ -83,6 +83,14 @@ export async function middleware(request: NextRequest) {
     return addSecurityHeaders(NextResponse.next())
   }
 
+  // /hall-office — HallOffice role only
+  if (pathname.startsWith("/hall-office")) {
+    if (role !== "HallOffice") {
+      return addSecurityHeaders(NextResponse.redirect(new URL("/", request.url)))
+    }
+    return addSecurityHeaders(NextResponse.next())
+  }
+
   // /student — User role only
   if (pathname.startsWith("/student")) {
     if (role !== "User") {

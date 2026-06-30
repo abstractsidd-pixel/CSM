@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import {
   complaints,
   complaintLogs,
+  complaintComments,
   feedback,
   buildings,
   categories,
@@ -95,12 +96,16 @@ export async function registerComplaint(formData: FormData) {
     ? Number(formData.get("subcategoryId"))
     : null
   const categoryLabel = (formData.get("categoryLabel") as string) || null
+  const description = (formData.get("description") as string) || null
   const otherText = (formData.get("otherText") as string) || null
   const priority = (formData.get("priority") as string) || "Minor"
-  const preferredAtRaw = formData.get("preferredAt") as string
-  const photoUrl = (formData.get("photoUrl") as string) || null
+  const photoPath = (formData.get("photoPath") as string) || null
   const complainantName = (formData.get("complainantName") as string) || null
   const complainantEmail = session?.email || ""
+
+  const t1 = (formData.get("preferredTime1") as string) || null
+  const t2 = (formData.get("preferredTime2") as string) || null
+  const t3 = (formData.get("preferredTime3") as string) || null
 
   if (!buildingId || !complainantEmail) {
     return { error: "Building and email are required." }
@@ -110,13 +115,56 @@ export async function registerComplaint(formData: FormData) {
     return { error: "Invalid priority." }
   }
 
-  if (photoUrl && !photoUrl.startsWith("https://")) {
-    return { error: "Photo URL must use HTTPS." }
+  if (!t1) {
+    return { error: "At least the first preferred time slot is required." }
+  }
+
+  const building = await db.select().from(buildings).where(eq(buildings.id, buildingId)).limit(1)
+  const isHostel = building[0]?.isHostel ?? false
+  const due = await dueDateFor(priority)
+
+  if (isHostel) {
+    const now = new Date()
+    const pendingDocket = `PENDING-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`
+
+    const [created] = await db
+      .insert(complaints)
+      .values({
+        docketNumber: pendingDocket,
+        buildingId,
+        floor,
+        room,
+        categoryId,
+        subcategoryId,
+        categoryLabel,
+        description,
+        otherText,
+        priority,
+        preferredTime1: t1 ? new Date(t1) : null,
+        preferredTime2: t2 ? new Date(t2) : null,
+        preferredTime3: t3 ? new Date(t3) : null,
+        photoPath,
+        status: "Pending Review",
+        complainantName,
+        complainantEmail,
+        dueAt: due,
+      })
+      .returning()
+
+    await db.insert(complaintLogs).values({
+      complaintId: created.id,
+      action: "Pending Review",
+      details: `Hostel complaint submitted for Hall Office review. Priority: ${priority}.`,
+      staffLabel: complainantName || complainantEmail,
+    })
+
+    await logActivity(session?.email || complainantEmail, session?.role || "User", "COMPLAINT_SUBMITTED", `Docket: ${pendingDocket} Building: ${buildingId} Priority: ${priority}`)
+    revalidatePath("/track")
+    revalidatePath("/hall-office")
+    return { docket: created.docketNumber }
   }
 
   const docket = await generateDocket(buildingId, categoryId)
-  const due = await dueDateFor(priority)
-  const building = await db.select().from(buildings).where(eq(buildings.id, buildingId)).limit(1)
 
   const [created] = await db
     .insert(complaints)
@@ -128,10 +176,13 @@ export async function registerComplaint(formData: FormData) {
       categoryId,
       subcategoryId,
       categoryLabel,
+      description,
       otherText,
       priority,
-      preferredAt: preferredAtRaw ? new Date(preferredAtRaw) : null,
-      photoUrl,
+      preferredTime1: t1 ? new Date(t1) : null,
+      preferredTime2: t2 ? new Date(t2) : null,
+      preferredTime3: t3 ? new Date(t3) : null,
+      photoPath,
       status: "Registered",
       complainantName,
       complainantEmail,
@@ -153,6 +204,76 @@ export async function registerComplaint(formData: FormData) {
   return { docket: created.docketNumber }
 }
 
+export async function editComplaint(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const session = await getSession()
+  if (!session) return { error: "Unauthorized." }
+
+  const id = Number(formData.get("id"))
+  const description = (formData.get("description") as string) || null
+  const otherText = (formData.get("otherText") as string) || null
+  const priority = (formData.get("priority") as string) || "Minor"
+  const floor = (formData.get("floor") as string) || null
+  const room = (formData.get("room") as string) || null
+  const photoPath = (formData.get("photoPath") as string) || null
+
+  const t1 = (formData.get("preferredTime1") as string) || null
+  const t2 = (formData.get("preferredTime2") as string) || null
+  const t3 = (formData.get("preferredTime3") as string) || null
+
+  if (!id) return { error: "Complaint ID is required." }
+
+  const rows = await db.select().from(complaints).where(eq(complaints.id, id)).limit(1)
+  const existing = rows[0]
+  if (!existing) return { error: "Complaint not found." }
+
+  if (existing.complainantEmail !== session.email) {
+    return { error: "You can only edit your own complaints." }
+  }
+
+  const editableStatuses = ["Registered", "Reactivated"]
+  if (!editableStatuses.includes(existing.status)) {
+    return { error: "Complaint can only be edited when Registered or Reactivated." }
+  }
+
+  if (!PRIORITIES.includes(priority as typeof PRIORITIES[number])) {
+    return { error: "Invalid priority." }
+  }
+
+  if (!t1) {
+    return { error: "At least the first preferred time slot is required." }
+  }
+
+  await db
+    .update(complaints)
+    .set({
+      description,
+      otherText,
+      priority,
+      floor,
+      room,
+      photoPath: photoPath || existing.photoPath,
+      preferredTime1: t1 ? new Date(t1) : null,
+      preferredTime2: t2 ? new Date(t2) : null,
+      preferredTime3: t3 ? new Date(t3) : null,
+    })
+    .where(eq(complaints.id, id))
+
+  await db.insert(complaintLogs).values({
+    complaintId: id,
+    action: "Complaint Edited",
+    details: "Complainant updated complaint details.",
+    staffLabel: session.name || session.email,
+  })
+
+  await logActivity(session.email, session.role, "COMPLAINT_EDITED", `Docket: ${existing.docketNumber}`)
+  revalidatePath("/track")
+  revalidatePath(`/admin/complaints/${id}`)
+  return { ok: true }
+}
+
 export async function assignComplaint(formData: FormData) {
   const limitError = await checkMutationLimit()
   if (limitError) return { error: limitError }
@@ -168,25 +289,48 @@ export async function assignComplaint(formData: FormData) {
   const expectedStart = (formData.get("expectedStart") as string) || null
   const assignRemarks = (formData.get("assignRemarks") as string) || null
   const staffLabel = (formData.get("staffLabel") as string) || "IWD"
+  const selectedTimeSlot = formData.get("selectedTimeSlot") ? Number(formData.get("selectedTimeSlot")) : null
 
   if (!id || !technicianId) return { error: "Technician is required." }
 
+  const existing = await db.select().from(complaints).where(eq(complaints.id, id)).limit(1)
+  const c = existing[0]
+  const isFirstAssign = !c?.assignedTechnicianId
+
+  const updateData: Record<string, unknown> = {
+    assignedTechnicianId: technicianId,
+    technicianTrade,
+    expectedStart: expectedStart ? new Date(expectedStart) : null,
+    assignRemarks,
+    status: "Assigned",
+    assignedAt: new Date(),
+  }
+  if (isFirstAssign && selectedTimeSlot && [1, 2, 3].includes(selectedTimeSlot)) {
+    updateData.selectedTimeSlot = selectedTimeSlot
+  }
+
   await db
     .update(complaints)
-    .set({
-      assignedTechnicianId: technicianId,
-      technicianTrade,
-      expectedStart,
-      assignRemarks,
-      status: "Assigned",
-      assignedAt: new Date(),
-    })
+    .set(updateData)
     .where(eq(complaints.id, id))
+
+  let timeDetail = ""
+  if (isFirstAssign && selectedTimeSlot && [1, 2, 3].includes(selectedTimeSlot)) {
+    const slotTime = selectedTimeSlot === 1 ? c?.preferredTime1 : selectedTimeSlot === 2 ? c?.preferredTime2 : c?.preferredTime3
+    if (slotTime) {
+      timeDetail = ` Visit: ${new Date(slotTime).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}.`
+    }
+  }
+  if (expectedStart) {
+    timeDetail += ` Expected start: ${new Date(expectedStart).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}.`
+  }
+
+  const remarksDetail = assignRemarks ? ` Remarks: ${assignRemarks}.` : ""
 
   await db.insert(complaintLogs).values({
     complaintId: id,
     action: "Assigned",
-    details: `Assigned to ${technicianName ?? `technician #${technicianId}`}. ${assignRemarks ?? ""}`.trim(),
+    details: `Assigned to ${technicianName ?? `technician #${technicianId}`}.${timeDetail}${remarksDetail}`.trim(),
     staffLabel,
   })
 
@@ -318,5 +462,127 @@ export async function submitSurvey(formData: FormData) {
   if (!rating) return { error: "Rating is required." }
   await db.insert(surveys).values({ rating, comment, respondentEmail })
   await logActivity(session?.email || respondentEmail || "system", session?.role || "User", "SURVEY_SUBMITTED", `Rating: ${rating}/5`)
+  return { ok: true }
+}
+
+export async function reassignCategory(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const roleError = await requireAdmin()
+  if (roleError) return { error: roleError }
+
+  const session = await getSession()
+  const id = Number(formData.get("id"))
+  const categoryId = Number(formData.get("categoryId"))
+
+  if (!id || !categoryId) return { error: "Complaint ID and category are required." }
+
+  const rows = await db.select().from(complaints).where(eq(complaints.id, id)).limit(1)
+  const c = rows[0]
+  if (!c) return { error: "Complaint not found." }
+
+  const catRows = await db.select().from(categories).where(eq(categories.id, categoryId)).limit(1)
+  const cat = catRows[0]
+  if (!cat) return { error: "Category not found." }
+
+  const oldCategoryLabel = c.categoryLabel || "—"
+
+  await db
+    .update(complaints)
+    .set({
+      categoryId,
+      categoryLabel: cat.name,
+    })
+    .where(eq(complaints.id, id))
+
+  await db.insert(complaintLogs).values({
+    complaintId: id,
+    action: "Category Reassigned",
+    details: `Category changed from "${oldCategoryLabel}" to "${cat.name}".`,
+    staffLabel: `${session?.name || "Staff"} (${session?.role})`,
+  })
+
+  await logActivity(session?.email || "system", session?.role || "system", "COMPLAINT_CATEGORY_REASSIGNED", `Complaint ID: ${id} New Category: ${cat.name}`)
+  revalidatePath("/admin")
+  revalidatePath(`/admin/complaints/${id}`)
+  return { ok: true }
+}
+
+export async function selectTimeSlot(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const roleError = await requireAdmin()
+  if (roleError) return { error: roleError }
+
+  const session = await getSession()
+  const id = Number(formData.get("id"))
+  const slot = Number(formData.get("slot"))
+
+  if (!id || ![1, 2, 3].includes(slot)) return { error: "Invalid complaint ID or slot." }
+
+  const rows = await db.select().from(complaints).where(eq(complaints.id, id)).limit(1)
+  const c = rows[0]
+  if (!c) return { error: "Complaint not found." }
+
+  const slotTime = slot === 1 ? c.preferredTime1 : slot === 2 ? c.preferredTime2 : c.preferredTime3
+
+  if (!slotTime) return { error: "Selected time slot is empty." }
+
+  const timeLabel = new Date(slotTime).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+
+  await db
+    .update(complaints)
+    .set({ selectedTimeSlot: slot })
+    .where(eq(complaints.id, id))
+
+  await db.insert(complaintLogs).values({
+    complaintId: id,
+    action: "Time Slot Selected",
+    details: `Selected slot ${slot}: ${timeLabel}`,
+    staffLabel: `${session?.name || "Staff"} (${session?.role})`,
+  })
+
+  await logActivity(session?.email || "system", session?.role || "system", "COMPLAINT_TIME_SLOT_SELECTED", `Complaint ID: ${id} Slot: ${slot}`)
+  revalidatePath("/admin")
+  revalidatePath(`/admin/complaints/${id}`)
+  revalidatePath("/track")
+  return { ok: true }
+}
+
+export async function addComment(formData: FormData) {
+  const limitError = await checkMutationLimit()
+  if (limitError) return { error: limitError }
+
+  const session = await getSession()
+  if (!session) return { error: "Unauthorized." }
+
+  const complaintId = Number(formData.get("complaintId"))
+  const message = (formData.get("message") as string)?.trim()
+
+  if (!complaintId || !message) return { error: "Complaint ID and message are required." }
+
+  const rows = await db.select().from(complaints).where(eq(complaints.id, complaintId)).limit(1)
+  if (!rows[0]) return { error: "Complaint not found." }
+
+  await db.insert(complaintComments).values({
+    complaintId,
+    message,
+    authorEmail: session.email,
+    authorName: session.name,
+    authorRole: session.role,
+  })
+
+  await db.insert(complaintLogs).values({
+    complaintId,
+    action: "Comment",
+    details: message.length > 100 ? message.slice(0, 100) + "…" : message,
+    staffLabel: `${session.name} (${session.role})`,
+  })
+
+  revalidatePath("/admin")
+  revalidatePath(`/admin/complaints/${complaintId}`)
+  revalidatePath("/track")
   return { ok: true }
 }

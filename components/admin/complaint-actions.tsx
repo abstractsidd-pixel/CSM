@@ -14,12 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { assignComplaint, updateStatus } from "@/app/actions/complaints"
+import { assignComplaint, updateStatus, reassignCategory } from "@/app/actions/complaints"
 import { toast } from "sonner"
-import { Wrench, RefreshCw } from "lucide-react"
-import type { ComplaintRow, TechnicianRow } from "@/lib/queries"
+import { Wrench, RefreshCw, ArrowRightLeft, CalendarDays, Check } from "lucide-react"
+import type { ComplaintRow, TechnicianRow, CategoryRow } from "@/lib/queries"
 
 const NEXT_STATUSES: Record<string, string[]> = {
+  "Pending Review": [],
+  Rejected: [],
   Registered: ["In Progress", "Resolved"],
   Assigned: ["In Progress", "Resolved"],
   "In Progress": ["Resolved"],
@@ -33,11 +35,17 @@ export function ComplaintActions({
   technicians,
   staffLabel,
   currentTech,
+  categories,
+  sessionRole,
+  timeSlots,
 }: {
   complaint: ComplaintRow
   technicians: TechnicianRow[]
   staffLabel: string
   currentTech: string | null
+  categories: CategoryRow[]
+  sessionRole?: string
+  timeSlots: { slot: number; time: Date | string | null }[]
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -45,13 +53,22 @@ export function ComplaintActions({
     complaint.assignedTechnicianId ? String(complaint.assignedTechnicianId) : "",
   )
   const [status, setStatus] = useState("")
+  const [newCategoryId, setNewCategoryId] = useState("")
+  const [selectedSlot, setSelectedSlot] = useState<number>(complaint.selectedTimeSlot ?? 0)
 
   const activeTechs = technicians.filter((t) => t.status === "Active")
   const nextStatuses = NEXT_STATUSES[complaint.status] ?? []
+  const isJE = sessionRole === "JE"
+
+  const level1Categories = categories.filter((c) => c.level === 1)
 
   function onAssign(formData: FormData) {
     if (!technicianId) {
       toast.error("Select a technician.")
+      return
+    }
+    if (!selectedSlot) {
+      toast.error("Please select a visit time slot.")
       return
     }
     const tech = technicians.find((t) => String(t.id) === technicianId)
@@ -60,6 +77,7 @@ export function ComplaintActions({
     formData.set("technicianName", tech?.name ?? "")
     formData.set("technicianTrade", tech?.trade ?? "")
     formData.set("staffLabel", staffLabel)
+    formData.set("selectedTimeSlot", String(selectedSlot))
     startTransition(() => {
       void (async () => {
         const res = await assignComplaint(formData)
@@ -89,8 +107,67 @@ export function ComplaintActions({
     })
   }
 
+  function onReassignCategory() {
+    if (!newCategoryId) {
+      toast.error("Select a category.")
+      return
+    }
+    const formData = new FormData()
+    formData.set("id", String(complaint.id))
+    formData.set("categoryId", newCategoryId)
+    startTransition(() => {
+      void (async () => {
+        const res = await reassignCategory(formData)
+        if (!res || !res.ok) return toast.error(res?.error || "Failed to reassign category")
+        toast.success("Category reassigned successfully")
+        setNewCategoryId("")
+        router.refresh()
+      })()
+    })
+  }
+
   return (
     <>
+      {isJE && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ArrowRightLeft className="size-4 text-primary" />
+              Reassign Category
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Move this complaint to a different category if it was classified incorrectly.
+            </p>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-sm">New Category</Label>
+                <Select
+                  value={newCategoryId}
+                  onValueChange={(value) => setNewCategoryId(value ?? "")}
+                  items={level1Categories.map((c) => ({ value: String(c.id), label: c.name }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {level1Categories.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={onReassignCategory} disabled={isPending || !newCategoryId}>
+                Reassign
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -125,13 +202,49 @@ export function ComplaintActions({
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm">Expected start date</Label>
-              <Input type="date" name="expectedStart" />
+              <Label className="text-sm">Expected Start Date & Time</Label>
+              <Input type="datetime-local" name="expectedStart" />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm">Remarks</Label>
               <Textarea name="assignRemarks" rows={2} placeholder="Instructions for technician" />
             </div>
+            {timeSlots.length > 0 && !complaint.assignedTechnicianId && (
+              <div className="flex flex-col gap-1.5">
+                <Label className="flex items-center gap-1.5 text-sm">
+                  <CalendarDays className="size-3.5" />
+                  Visit Time Slot *
+                </Label>
+                <div className="flex flex-col gap-2">
+                  {timeSlots.map((s) => {
+                    const t = s.time ? new Date(s.time) : null
+                    const label = t
+                      ? `${t.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}, ${t.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
+                      : ""
+                    return (
+                      <button
+                        key={s.slot}
+                        type="button"
+                        onClick={() => setSelectedSlot(s.slot)}
+                        className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                          selectedSlot === s.slot
+                            ? "border-primary bg-primary/5 font-medium"
+                            : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium">
+                          {s.slot}
+                        </span>
+                        <span className="flex-1 text-left">{label}</span>
+                        {selectedSlot === s.slot && (
+                          <Check className="size-4 text-primary" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
             <Button type="submit" disabled={isPending}>
               {complaint.assignedTechnicianId ? "Reassign" : "Assign"}
             </Button>

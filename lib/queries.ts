@@ -7,6 +7,7 @@ import {
   staff,
   complaints,
   complaintLogs,
+  complaintComments,
   feedback,
   surveys,
   notificationTemplates,
@@ -20,6 +21,10 @@ export async function getBuildings() {
 
 export async function getCategories() {
   return db.select().from(categories).orderBy(asc(categories.level), asc(categories.name))
+}
+
+export async function getDivisions() {
+  return db.select().from(categories).where(eq(categories.level, 1)).orderBy(asc(categories.name))
 }
 
 export async function getTechnicians() {
@@ -80,6 +85,14 @@ export async function getFeedbackForComplaint(complaintId: number) {
     .orderBy(desc(feedback.createdAt))
     .limit(1)
   return rows[0] ?? null
+}
+
+export async function getCommentsForComplaint(complaintId: number) {
+  return db
+    .select()
+    .from(complaintComments)
+    .where(eq(complaintComments.complaintId, complaintId))
+    .orderBy(asc(complaintComments.createdAt))
 }
 
 export async function getAllFeedback() {

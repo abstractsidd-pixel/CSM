@@ -178,3 +178,73 @@
 [2026-06-16T07:39:43.465Z] [Dean] dean@iitgoa.ac.in | FEEDBACK_SUBMITTED | Complaint ID: 10 Rating: 4/5
 [2026-06-16T07:40:23.282Z] [Dean] dean@iitgoa.ac.in | COMPLAINT_REACTIVATED | Complaint ID: 10 Docket: IITGoa/CMS/B2/ELEC/2026/0001 Reason: Got an Issue
 [2026-06-16T07:41:10.688Z] [Dean] dean@iitgoa.ac.in | COMPLAINT_STATUS_CHANGED | Complaint ID: 10 New Status: Resolved
+[2026-06-29T14:24:00.764Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-29T14:25:30.760Z] [Dean] dean@iitgoa.ac.in | COMPLAINT_REGISTERED | Docket: IITGoa/CMS/BH-1/PLMB/2026/0001 Building: 3 Priority: Minor
+[2026-06-29T14:29:02.922Z] [Dean] dean@iitgoa.ac.in | CATEGORY_CREATED | Category: Academics
+[2026-06-29T14:30:48.166Z] [Dean] dean@iitgoa.ac.in | CATEGORY_CREATED | Category: Projector
+[2026-06-29T14:49:32.503Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-29T14:49:48.287Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-29T14:50:06.905Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-29T14:51:05.396Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-29T14:52:04.076Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_REGISTERED | Docket: IITGoa/CMS/B3/ELEC/2026/0001 Building: 7 Priority: Minor
+[2026-06-29T14:52:15.027Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-29T14:52:30.491Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-29T15:07:59.529Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_CATEGORY_REASSIGNED | Complaint ID: 15 New Category: Plumbing
+[2026-06-29T15:08:16.144Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-29T15:08:37.028Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T07:16:58.780Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T07:17:18.812Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T07:17:41.612Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T07:17:58.218Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T07:42:50.643Z] [Dean] dean@iitgoa.ac.in | COMPLAINT_REGISTERED | Docket: IITGoa/CMS/BH-1/ELEC/2026/0001 Building: 3 Priority: Minor
+[2026-06-30T07:43:50.582Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T07:44:08.335Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T07:45:10.960Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T07:45:37.786Z] [AE] ae@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T07:46:32.456Z] [AE] ae@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T07:46:44.167Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T07:47:20.420Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T07:47:45.509Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T07:48:42.681Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_REGISTERED | Docket: IITGoa/CMS/BH-1/ELEC/2026/0002 Building: 3 Priority: Minor
+[2026-06-30T07:49:00.874Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T07:49:21.145Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T07:50:14.565Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T07:51:01.821Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T08:06:24.360Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_EDITED | Docket: IITGoa/CMS/BH-1/ELEC/2026/0002
+[2026-06-30T08:06:53.492Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T08:07:20.481Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T08:07:55.864Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_TIME_SLOT_SELECTED | Complaint ID: 17 Slot: 2
+[2026-06-30T08:28:58.002Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 17 Technician: Mahesh Pednekar
+[2026-06-30T13:33:49.221Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 16 Technician: Mahesh Pednekar
+[2026-06-30T13:34:25.568Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 16 Technician: Mahesh Pednekar
+[2026-06-30T13:37:45.028Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 16 Technician: Mahesh Pednekar
+[2026-06-30T13:40:04.530Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 16 Technician: Mahesh Pednekar
+[2026-06-30T13:45:15.021Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 16 Technician: Mahesh Pednekar
+[2026-06-30T13:48:05.981Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T13:48:22.569Z] [Dean] dean@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T13:50:08.802Z] [Dean] dean@iitgoa.ac.in | DIVISION_CREATED | Division: Table
+[2026-06-30T13:51:07.077Z] [Dean] dean@iitgoa.ac.in | STAFF_CREATED | Staff: Plumbing JE (plumber@iitgoa.ac.in) Role: JE
+[2026-06-30T13:51:15.623Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T13:51:32.813Z] [JE] plumber@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T13:52:16.494Z] [JE] plumber@iitgoa.ac.in | COMPLAINT_CATEGORY_REASSIGNED | Complaint ID: 14 New Category: Electrical
+[2026-06-30T13:52:28.972Z] [JE] plumber@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T13:52:40.303Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T14:21:20.723Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T14:21:39.543Z] [EE] ee@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T14:52:05.713Z] [EE] ee@iitgoa.ac.in | BUILDING_DELETED | Building ID: 9
+[2026-06-30T14:52:46.366Z] [EE] ee@iitgoa.ac.in | BUILDING_CREATED | Building: Boys Hostel 2
+[2026-06-30T14:56:48.036Z] [EE] ee@iitgoa.ac.in | STAFF_CREATED | Staff: Hall Office (hall.office@iitgoa.ac.in) Role: HallOffice
+[2026-06-30T14:57:16.391Z] [EE] ee@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T14:57:37.147Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T14:59:07.645Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_SUBMITTED | Docket: PENDING-20260630-202906 Building: 7 Priority: Minor
+[2026-06-30T14:59:20.498Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T14:59:36.349Z] [HallOffice] hall.office@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T15:00:35.927Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T15:06:08.891Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_SUBMITTED | Docket: PENDING-20260630-203608 Building: 3 Priority: Minor
+[2026-06-30T15:06:50.362Z] [HallOffice] hall.office@iitgoa.ac.in | COMPLAINT_APPROVED | Complaint ID: 19 New Docket: IITGoa/CMS/BH-1/ELEC/2026/0004
+[2026-06-30T15:07:12.276Z] [HallOffice] hall.office@iitgoa.ac.in | COMPLAINT_REJECTED | Complaint ID: 18 Reason: False Complaint
+[2026-06-30T15:12:52.904Z] [HallOffice] hall.office@iitgoa.ac.in | LOGOUT | User logged out
+[2026-06-30T15:13:11.359Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-06-30T15:14:23.077Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 19 Technician: Mahesh Pednekar
+[2026-06-30T15:16:36.199Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 19 Technician: Mahesh Pednekar
+[2026-06-30T15:17:34.995Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_STATUS_CHANGED | Complaint ID: 19 New Status: Resolved

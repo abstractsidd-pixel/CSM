@@ -1,4 +1,4 @@
-export const ROLES = ["User", "JE", "AE", "EE", "Dean"] as const
+export const ROLES = ["User", "HallOffice", "JE", "AE", "EE", "Dean"] as const
 export type Role = (typeof ROLES)[number]
 
 export const PRIORITIES = ["Critical", "Major", "Minor"] as const
@@ -6,6 +6,8 @@ export type Priority = (typeof PRIORITIES)[number]
 
 // Complaint lifecycle statuses
 export const STATUSES = [
+  "Pending Review",
+  "Rejected",
   "Registered",
   "Assigned",
   "In Progress",
@@ -22,6 +24,8 @@ export const PRIORITY_BADGE: Record<string, string> = {
 }
 
 export const STATUS_BADGE: Record<string, string> = {
+  "Pending Review": "bg-chart-1/15 text-chart-1 border-chart-1/30",
+  Rejected: "bg-destructive/15 text-destructive border-destructive/30",
   Registered: "bg-secondary text-secondary-foreground border-border",
   Assigned: "bg-chart-2/15 text-chart-2 border-chart-2/30",
   "In Progress": "bg-primary/15 text-primary border-primary/30",

@@ -14,10 +14,11 @@ import {
   formatDate,
   slaStatus,
 } from "@/components/shared-ui"
-import { submitFeedback, reactivateComplaint } from "@/app/actions/complaints"
+import { submitFeedback, reactivateComplaint, editComplaint } from "@/app/actions/complaints"
 import { toast } from "sonner"
-import { Search, Star, RotateCcw, MapPin, Clock } from "lucide-react"
+import { Search, Star, RotateCcw, MapPin, Clock, CalendarDays, MessageSquare, Pencil, X, Save } from "lucide-react"
 import type { ComplaintRow, LogRow, BuildingRow, TechnicianRow } from "@/lib/queries"
+import { CommentSection } from "@/components/admin/comment-section"
 
 type FeedbackRow = { id: number; rating: number; comment: string | null } | null
 
@@ -26,22 +27,34 @@ export function TrackView({
   complaint,
   logs,
   feedback,
+  comments,
   buildings,
   technicians,
   myComplaints,
+  sessionEmail,
+  sessionName,
+  sessionRole,
 }: {
   initialDocket: string
   complaint: ComplaintRow | null
   logs: LogRow[]
   feedback: FeedbackRow
+  comments: { id: number; complaintId: number; message: string; authorEmail: string; authorName: string | null; authorRole: string; createdAt: Date }[]
   buildings: BuildingRow[]
   technicians: TechnicianRow[]
   myComplaints: ComplaintRow[]
+  sessionEmail: string
+  sessionName: string
+  sessionRole: string
 }) {
   const router = useRouter()
   const [docket, setDocket] = useState(initialDocket)
   const [isPending, startTransition] = useTransition()
   const [rating, setRating] = useState(0)
+  const [editing, setEditing] = useState(false)
+  const [editPhotoPath, setEditPhotoPath] = useState<string | null>(null)
+  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   const building = complaint ? buildings.find((b) => b.id === complaint.buildingId) : null
   const tech = complaint
@@ -80,9 +93,53 @@ export function TrackView({
     })
   }
 
+  function onEdit(formData: FormData) {
+    formData.set("id", String(complaint!.id))
+    if (editPhotoPath) formData.set("photoPath", editPhotoPath)
+    startTransition(async () => {
+      const res = await editComplaint(formData)
+      if (!res || !res.ok) {
+        toast.error(res?.error || "Failed to update complaint.")
+        return
+      }
+      toast.success("Complaint updated.")
+      setEditing(false)
+      router.refresh()
+    })
+  }
+
+  async function handleEditPhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File must be under 5MB.")
+      return
+    }
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("photo", file)
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error || "Upload failed.")
+        return
+      }
+      setEditPhotoPath(data.path)
+      setEditPhotoPreview(URL.createObjectURL(file))
+      toast.success("Photo uploaded.")
+    } catch {
+      toast.error("Upload failed.")
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const canFeedback = complaint?.status === "Resolved" && !feedback
   const canReactivate =
     complaint && ["Resolved", "Closed"].includes(complaint.status)
+  const canEdit =
+    complaint && ["Registered", "Reactivated"].includes(complaint.status)
   const sla = complaint ? slaStatus(complaint.dueAt, complaint.closedAt) : null
 
   return (
@@ -151,6 +208,152 @@ export function TrackView({
               </Detail>
             </CardContent>
           </Card>
+
+          {canEdit && !editing && (
+            <Button variant="outline" size="sm" className="self-start" onClick={() => setEditing(true)}>
+              <Pencil className="size-3.5 mr-1.5" />
+              Edit Complaint
+            </Button>
+          )}
+
+          {canEdit && editing && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Pencil className="size-4 text-primary" />
+                  Edit Complaint
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form action={onEdit} className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-sm">Description</Label>
+                    <Textarea name="description" defaultValue={complaint.description ?? ""} rows={3} placeholder="Describe the issue" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-sm">Floor</Label>
+                      <Input name="floor" defaultValue={complaint.floor ?? ""} placeholder="e.g. 2" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-sm">Room</Label>
+                      <Input name="room" defaultValue={complaint.room ?? ""} placeholder="e.g. 204" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-sm">Other Details</Label>
+                    <Input name="otherText" defaultValue={complaint.otherText ?? ""} placeholder="Any extra info" />
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-sm">Slot 1 *</Label>
+                      <Input type="datetime-local" name="preferredTime1" defaultValue={complaint.preferredTime1 ? new Date(complaint.preferredTime1).toISOString().slice(0, 16) : ""} required />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-sm">Slot 2</Label>
+                      <Input type="datetime-local" name="preferredTime2" defaultValue={complaint.preferredTime2 ? new Date(complaint.preferredTime2).toISOString().slice(0, 16) : ""} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-sm">Slot 3</Label>
+                      <Input type="datetime-local" name="preferredTime3" defaultValue={complaint.preferredTime3 ? new Date(complaint.preferredTime3).toISOString().slice(0, 16) : ""} />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-sm">Photo</Label>
+                    {complaint.photoPath && !editPhotoPreview && (
+                      <div className="flex items-center gap-2">
+                        <img src={complaint.photoPath} alt="Current" className="h-16 rounded border border-border object-cover" />
+                        <span className="text-xs text-muted-foreground">Current photo</span>
+                      </div>
+                    )}
+                    {editPhotoPreview && (
+                      <div className="flex items-center gap-2">
+                        <img src={editPhotoPreview} alt="New" className="h-16 rounded border border-border object-cover" />
+                        <Button type="button" variant="ghost" size="sm" onClick={() => { setEditPhotoPath(null); setEditPhotoPreview(null) }}>
+                          <X className="size-3.5" />
+                        </Button>
+                      </div>
+                    )}
+                    <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleEditPhotoUpload} disabled={uploading} className="text-sm" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={isPending || uploading}>
+                      <Save className="size-3.5 mr-1.5" />
+                      {isPending ? "Saving..." : "Save Changes"}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => { setEditing(false); setEditPhotoPath(null); setEditPhotoPreview(null) }}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          {complaint.description && !editing && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <MessageSquare className="size-4 text-primary" />
+                  Description
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-wrap">{complaint.description}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {(() => {
+            const timeSlots = [
+              { slot: 1, time: complaint.preferredTime1 },
+              { slot: 2, time: complaint.preferredTime2 },
+              { slot: 3, time: complaint.preferredTime3 },
+            ].filter((s) => s.time != null)
+
+            if (timeSlots.length === 0) return null
+
+            const formatTime = (time: Date | string | null) => {
+              if (!time) return ""
+              const t = new Date(time)
+              return `${t.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}, ${t.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
+            }
+
+            return (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <CalendarDays className="size-4 text-primary" />
+                    Preferred Visit Times
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col gap-2">
+                    {timeSlots.map((s) => (
+                      <div
+                        key={s.slot}
+                        className={`flex items-center gap-3 rounded-lg border px-4 py-2.5 text-sm ${
+                          complaint.selectedTimeSlot === s.slot
+                            ? "border-primary bg-primary/5 font-medium"
+                            : "border-border"
+                        }`}
+                      >
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium">
+                          {s.slot}
+                        </span>
+                        <span>{formatTime(s.time)}</span>
+                        {complaint.selectedTimeSlot === s.slot && (
+                          <span className="ml-auto rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
+                            Confirmed
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })()}
 
           <Card>
             <CardHeader>
@@ -256,6 +459,14 @@ export function TrackView({
               </CardContent>
             </Card>
           )}
+
+          <CommentSection
+            complaintId={complaint.id}
+            comments={comments}
+            sessionEmail={sessionEmail}
+            sessionName={sessionName}
+            sessionRole={sessionRole}
+          />
         </>
       )}
 

@@ -8,13 +8,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { credentialLogin } from "@/app/actions/auth"
-import { Building2, Loader2, LogIn, GraduationCap, Wrench, UserCog } from "lucide-react"
+import { Building2, Loader2, LogIn, GraduationCap, Wrench, UserCog, ClipboardCheck } from "lucide-react"
 import { toast } from "sonner"
 import type { Role } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
 const ROLE_OPTIONS: { role: Role; label: string; desc: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { role: "User", label: "Student / Faculty", desc: "Register & track complaints", icon: GraduationCap },
+  { role: "HallOffice", label: "Hall Office", desc: "Verify & approve complaints", icon: ClipboardCheck },
   { role: "JE", label: "Junior Engineer", desc: "Manage assigned building", icon: Wrench },
   { role: "AE", label: "Assistant Engineer", desc: "Supervise complaints", icon: UserCog },
   { role: "EE", label: "Executive Engineer", desc: "Reports & technicians", icon: UserCog },
