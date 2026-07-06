@@ -9,73 +9,17 @@ import {
   buildings,
   categories,
   slaRules,
+  staff,
   surveys,
 } from "@/lib/db/schema"
 import { and, eq, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/audit-log"
 import { getSession } from "@/lib/session"
-import { checkRateLimit } from "@/lib/rate-limit"
-import { isAdminRole, STATUSES, PRIORITIES } from "@/lib/constants"
-
-const MUTATION_LIMIT = 30
-const MUTATION_WINDOW_MS = 60 * 1000
-
-async function checkMutationLimit(): Promise<string | null> {
-  const session = await getSession()
-  const key = `mut:${session?.email || "anonymous"}`
-  const { allowed, retryAfterMs } = checkRateLimit(key, MUTATION_LIMIT, MUTATION_WINDOW_MS)
-  if (!allowed) {
-    return `Too many requests. Please wait ${Math.ceil(retryAfterMs / 1000)} seconds.`
-  }
-  return null
-}
-
-function requireAdmin(): Promise<string | null> {
-  return getSession().then((s) => {
-    if (!s || !isAdminRole(s.role)) return "Unauthorized."
-    return null
-  })
-}
-
-function pad(n: number, len = 4) {
-  return String(n).padStart(len, "0")
-}
-
-async function generateDocket(buildingId: number, categoryId: number | null) {
-  const year = new Date().getFullYear()
-
-  const buildingRows = await db
-    .select({ code: buildings.code })
-    .from(buildings)
-    .where(eq(buildings.id, buildingId))
-    .limit(1)
-  const buildingCode = buildingRows[0]?.code ?? "UNK"
-
-  let categoryCode = "GEN"
-  if (categoryId) {
-    const catRows = await db
-      .select({ code: categories.code })
-      .from(categories)
-      .where(eq(categories.id, categoryId))
-      .limit(1)
-    categoryCode = catRows[0]?.code ?? "GEN"
-  }
-
-  const [{ count }] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(complaints)
-    .where(
-      and(
-        sql`EXTRACT(YEAR FROM ${complaints.createdAt}) = ${year}`,
-        sql`${complaints.buildingId} = ${buildingId}`,
-        sql`COALESCE(${complaints.categoryId}, 0) = COALESCE(${categoryId ?? 0}, 0)`
-      )
-    )
-
-  const seq = count + 1
-  return `IITGoa/CMS/${buildingCode}/${categoryCode}/${year}/${pad(seq)}`
-}
+import { STATUSES, PRIORITIES } from "@/lib/constants"
+import { createNotification, notifyJeStaff } from "./notifications"
+import { checkMutationLimit, requireAdmin } from "@/lib/auth-helpers"
+import { generateDocket } from "@/lib/docket"
 
 async function dueDateFor(priority: string) {
   const rules = await db.select().from(slaRules).where(eq(slaRules.priority, priority)).limit(1)
@@ -109,6 +53,16 @@ export async function registerComplaint(formData: FormData) {
 
   if (!buildingId || !complainantEmail) {
     return { error: "Building and email are required." }
+  }
+
+  if (complainantName && complainantName.length > 100) {
+    return { error: "Name must be under 100 characters." }
+  }
+  if (description && description.length > 2000) {
+    return { error: "Description must be under 2000 characters." }
+  }
+  if (otherText && otherText.length > 500) {
+    return { error: "Additional details must be under 500 characters." }
   }
 
   if (!PRIORITIES.includes(priority as typeof PRIORITIES[number])) {
@@ -161,6 +115,19 @@ export async function registerComplaint(formData: FormData) {
     await logActivity(session?.email || complainantEmail, session?.role || "User", "COMPLAINT_SUBMITTED", `Docket: ${pendingDocket} Building: ${buildingId} Priority: ${priority}`)
     revalidatePath("/track")
     revalidatePath("/hall-office")
+
+    const hoStaff = await db.select().from(staff).where(eq(staff.role, "HallOffice"))
+    for (const ho of hoStaff) {
+      await createNotification({
+        recipientEmail: ho.email,
+        type: "NEW_COMPLAINT",
+        title: "New Complaint Pending Review",
+        message: `A new ${priority} priority hostel complaint (${pendingDocket}) from ${building[0]?.name || "a hostel building"} is awaiting your review.`,
+        complaintId: created.id,
+        docketNumber: pendingDocket,
+      })
+    }
+
     return { docket: created.docketNumber }
   }
 
@@ -201,6 +168,15 @@ export async function registerComplaint(formData: FormData) {
   await logActivity(session?.email || complainantEmail, session?.role || "User", "COMPLAINT_REGISTERED", `Docket: ${docket} Building: ${buildingId} Priority: ${priority}`)
   revalidatePath("/track")
   revalidatePath("/admin")
+
+  await notifyJeStaff(building[0]?.jeId, {
+    type: "NEW_COMPLAINT",
+    title: "New Complaint Registered",
+    message: `A new ${priority} priority complaint (${docket}) has been registered in ${building[0]?.name || "your building"}.`,
+    complaintId: created.id,
+    docketNumber: docket,
+  })
+
   return { docket: created.docketNumber }
 }
 
@@ -271,6 +247,15 @@ export async function editComplaint(formData: FormData) {
   await logActivity(session.email, session.role, "COMPLAINT_EDITED", `Docket: ${existing.docketNumber}`)
   revalidatePath("/track")
   revalidatePath(`/admin/complaints/${id}`)
+
+  await notifyJeStaff(existing.jeId, {
+    type: "COMPLAINT_EDITED",
+    title: "Complaint Updated by Complainant",
+    message: `Complaint ${existing.docketNumber} has been updated by the complainant.`,
+    complaintId: id,
+    docketNumber: existing.docketNumber,
+  })
+
   return { ok: true }
 }
 
@@ -337,6 +322,18 @@ export async function assignComplaint(formData: FormData) {
   await logActivity(session?.email || "system", session?.role || "system", "COMPLAINT_ASSIGNED", `Complaint ID: ${id} Technician: ${technicianName || technicianId}`)
   revalidatePath("/admin")
   revalidatePath("/track")
+
+  if (c?.complainantEmail) {
+    await createNotification({
+      recipientEmail: c.complainantEmail,
+      type: "COMPLAINT_ASSIGNED",
+      title: "Your Complaint Has Been Assigned",
+      message: `Your complaint ${c.docketNumber} has been assigned to ${technicianName || `technician #${technicianId}`}.${timeDetail}`,
+      complaintId: id,
+      docketNumber: c.docketNumber,
+    })
+  }
+
   return { ok: true }
 }
 
@@ -372,6 +369,20 @@ export async function updateStatus(formData: FormData) {
   await logActivity(session?.email || "system", session?.role || "system", "COMPLAINT_STATUS_CHANGED", `Complaint ID: ${id} New Status: ${status}`)
   revalidatePath("/admin")
   revalidatePath("/track")
+
+  const complaintRows = await db.select().from(complaints).where(eq(complaints.id, id)).limit(1)
+  const complaint = complaintRows[0]
+  if (complaint?.complainantEmail) {
+    await createNotification({
+      recipientEmail: complaint.complainantEmail,
+      type: "STATUS_CHANGED",
+      title: "Complaint Status Updated",
+      message: `Your complaint ${complaint.docketNumber} status has been changed to "${status}".${note ? ` Note: ${note}` : ""}`,
+      complaintId: id,
+      docketNumber: complaint.docketNumber,
+    })
+  }
+
   return { ok: true }
 }
 
@@ -448,6 +459,15 @@ export async function reactivateComplaint(formData: FormData) {
   await logActivity(session.email, session.role, "COMPLAINT_REACTIVATED", `Complaint ID: ${id} Docket: ${c.docketNumber} Reason: ${reason}`)
   revalidatePath("/track")
   revalidatePath("/admin")
+
+  await notifyJeStaff(c.jeId, {
+    type: "COMPLAINT_REACTIVATED",
+    title: "Complaint Reactivated",
+    message: `Complaint ${c.docketNumber} has been reactivated by the complainant. Reason: ${reason}`,
+    complaintId: id,
+    docketNumber: c.docketNumber,
+  })
+
   return { ok: true }
 }
 
@@ -509,48 +529,6 @@ export async function reassignCategory(formData: FormData) {
   return { ok: true }
 }
 
-export async function selectTimeSlot(formData: FormData) {
-  const limitError = await checkMutationLimit()
-  if (limitError) return { error: limitError }
-
-  const roleError = await requireAdmin()
-  if (roleError) return { error: roleError }
-
-  const session = await getSession()
-  const id = Number(formData.get("id"))
-  const slot = Number(formData.get("slot"))
-
-  if (!id || ![1, 2, 3].includes(slot)) return { error: "Invalid complaint ID or slot." }
-
-  const rows = await db.select().from(complaints).where(eq(complaints.id, id)).limit(1)
-  const c = rows[0]
-  if (!c) return { error: "Complaint not found." }
-
-  const slotTime = slot === 1 ? c.preferredTime1 : slot === 2 ? c.preferredTime2 : c.preferredTime3
-
-  if (!slotTime) return { error: "Selected time slot is empty." }
-
-  const timeLabel = new Date(slotTime).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
-
-  await db
-    .update(complaints)
-    .set({ selectedTimeSlot: slot })
-    .where(eq(complaints.id, id))
-
-  await db.insert(complaintLogs).values({
-    complaintId: id,
-    action: "Time Slot Selected",
-    details: `Selected slot ${slot}: ${timeLabel}`,
-    staffLabel: `${session?.name || "Staff"} (${session?.role})`,
-  })
-
-  await logActivity(session?.email || "system", session?.role || "system", "COMPLAINT_TIME_SLOT_SELECTED", `Complaint ID: ${id} Slot: ${slot}`)
-  revalidatePath("/admin")
-  revalidatePath(`/admin/complaints/${id}`)
-  revalidatePath("/track")
-  return { ok: true }
-}
-
 export async function addComment(formData: FormData) {
   const limitError = await checkMutationLimit()
   if (limitError) return { error: limitError }
@@ -562,9 +540,17 @@ export async function addComment(formData: FormData) {
   const message = (formData.get("message") as string)?.trim()
 
   if (!complaintId || !message) return { error: "Complaint ID and message are required." }
+  if (message.length > 2000) return { error: "Comment must be under 2000 characters." }
 
   const rows = await db.select().from(complaints).where(eq(complaints.id, complaintId)).limit(1)
-  if (!rows[0]) return { error: "Complaint not found." }
+  const complaint = rows[0]
+  if (!complaint) return { error: "Complaint not found." }
+
+  const isAdmin = ["Admin", "EE", "Dean", "JE", "AE"].includes(session.role)
+  const isComplainant = complaint.complainantEmail === session.email
+  if (!isAdmin && !isComplainant) {
+    return { error: "You do not have access to this complaint." }
+  }
 
   await db.insert(complaintComments).values({
     complaintId,
@@ -580,6 +566,27 @@ export async function addComment(formData: FormData) {
     details: message.length > 100 ? message.slice(0, 100) + "…" : message,
     staffLabel: `${session.name} (${session.role})`,
   })
+
+  const notifyEmails: string[] = []
+  if (complaint.complainantEmail && complaint.complainantEmail !== session.email) {
+    notifyEmails.push(complaint.complainantEmail)
+  }
+  if (complaint.jeId) {
+    const jeRows = await db.select().from(staff).where(eq(staff.id, complaint.jeId)).limit(1)
+    if (jeRows[0]?.email && jeRows[0].email !== session.email) {
+      notifyEmails.push(jeRows[0].email)
+    }
+  }
+  for (const email of notifyEmails) {
+    await createNotification({
+      recipientEmail: email,
+      type: "NEW_COMMENT",
+      title: "New Comment on Complaint",
+      message: `${session.name || session.email} commented on ${complaint.docketNumber}: "${message.length > 80 ? message.slice(0, 80) + "…" : message}"`,
+      complaintId,
+      docketNumber: complaint.docketNumber,
+    })
+  }
 
   revalidatePath("/admin")
   revalidatePath(`/admin/complaints/${complaintId}`)

@@ -7,65 +7,9 @@ import { getSession } from "@/lib/session"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/audit-log"
 import { buildings, categories } from "@/lib/db/schema"
-
-const RATE_WINDOW_MS = 60 * 1000
-const RATE_MAX = 10
-const rateMap = new Map<string, { count: number; windowStart: number }>()
-
-async function checkMutationLimit(): Promise<string | null> {
-  const session = await getSession()
-  const key = session?.email || "anonymous"
-  const now = Date.now()
-  const entry = rateMap.get(key)
-  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
-    rateMap.set(key, { count: 1, windowStart: now })
-    return null
-  }
-  entry.count++
-  if (entry.count > RATE_MAX) return "Too many requests. Please wait a moment."
-  return null
-}
-
-function pad(n: number, len = 4) {
-  return String(n).padStart(len, "0")
-}
-
-async function generateDocket(buildingId: number, categoryId: number | null) {
-  const year = new Date().getFullYear()
-
-  const buildingRows = await db
-    .select({ code: buildings.code })
-    .from(buildings)
-    .where(eq(buildings.id, buildingId))
-    .limit(1)
-  const buildingCode = buildingRows[0]?.code ?? "UNK"
-
-  let categoryCode = "GEN"
-  if (categoryId) {
-    const catRows = await db
-      .select({ code: categories.code })
-      .from(categories)
-      .where(eq(categories.id, categoryId))
-      .limit(1)
-    categoryCode = catRows[0]?.code ?? "GEN"
-  }
-
-  const [{ count }] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(complaints)
-    .where(
-      and(
-        sql`EXTRACT(YEAR FROM ${complaints.createdAt}) = ${year}`,
-        sql`${complaints.buildingId} = ${buildingId}`,
-        sql`COALESCE(${complaints.categoryId}, 0) = COALESCE(${categoryId ?? 0}, 0)`,
-        sql`${complaints.status} != 'Pending Review'`,
-        sql`${complaints.status} != 'Rejected'`,
-      )
-    )
-
-  const seq = count + 1
-  return `IITGoa/CMS/${buildingCode}/${categoryCode}/${year}/${pad(seq)}`
-}
+import { createNotification, notifyJeStaff } from "./notifications"
+import { checkMutationLimit } from "@/lib/auth-helpers"
+import { generateDocket } from "@/lib/docket"
 
 export async function getPendingComplaints() {
   return db
@@ -90,7 +34,13 @@ export async function approveComplaint(formData: FormData) {
   if (!c) return { error: "Complaint not found." }
   if (c.status !== "Pending Review") return { error: "Complaint is not pending review." }
 
-  const realDocket = await generateDocket(c.buildingId, c.categoryId)
+  const realDocket = await generateDocket(c.buildingId, c.categoryId, [
+    sql`${complaints.status} != 'Pending Review'`,
+    sql`${complaints.status} != 'Rejected'`,
+  ])
+
+  const buildingRows = await db.select().from(buildings).where(eq(buildings.id, c.buildingId)).limit(1)
+  const jeId = buildingRows[0]?.jeId ?? null
 
   await db
     .update(complaints)
@@ -99,6 +49,7 @@ export async function approveComplaint(formData: FormData) {
       status: "Registered",
       reviewedBy: session.staffId ?? null,
       reviewedAt: new Date(),
+      jeId,
     })
     .where(eq(complaints.id, id))
 
@@ -113,6 +64,26 @@ export async function approveComplaint(formData: FormData) {
   revalidatePath("/hall-office")
   revalidatePath("/admin")
   revalidatePath("/track")
+
+  if (c.complainantEmail) {
+    await createNotification({
+      recipientEmail: c.complainantEmail,
+      type: "COMPLAINT_APPROVED",
+      title: "Complaint Approved",
+      message: `Your complaint has been approved by Hall Office. Your docket number is ${realDocket}. You can now track it.`,
+      complaintId: id,
+      docketNumber: realDocket,
+    })
+  }
+
+  await notifyJeStaff(jeId, {
+    type: "NEW_COMPLAINT",
+    title: "New Complaint Registered",
+    message: `A hostel complaint (${realDocket}) has been approved and registered by Hall Office in ${buildingRows[0]?.name || "your building"}.`,
+    complaintId: id,
+    docketNumber: realDocket,
+  })
+
   return { ok: true }
 }
 
@@ -152,5 +123,17 @@ export async function rejectComplaint(formData: FormData) {
 
   await logActivity(session.email, session.role, "COMPLAINT_REJECTED", `Complaint ID: ${id} Reason: ${reason}`)
   revalidatePath("/hall-office")
+
+  if (c.complainantEmail) {
+    await createNotification({
+      recipientEmail: c.complainantEmail,
+      type: "COMPLAINT_REJECTED",
+      title: "Complaint Rejected",
+      message: `Your complaint (${c.docketNumber}) has been rejected by Hall Office. Reason: ${reason}`,
+      complaintId: id,
+      docketNumber: c.docketNumber,
+    })
+  }
+
   return { ok: true }
 }

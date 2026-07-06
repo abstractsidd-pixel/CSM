@@ -3,7 +3,7 @@ import { Pool } from "pg"
 import * as schema from "./schema"
 
 const globalForDb = globalThis as unknown as { pool?: Pool }
-export const pool =
+const pool =
   globalForDb.pool ?? new Pool({
     connectionString: process.env.DATABASE_URL,
   })

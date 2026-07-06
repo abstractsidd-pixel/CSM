@@ -52,12 +52,6 @@ export function HallOfficeDashboard({
 
   const buildingName = (id: number) => buildings.find((b) => b.id === id)?.name ?? "—"
 
-  const formatTime = (time: Date | string | null) => {
-    if (!time) return ""
-    const t = new Date(time)
-    return `${t.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}, ${t.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
-  }
-
   function onApprove(id: number) {
     const fd = new FormData()
     fd.set("id", String(id))
@@ -230,7 +224,7 @@ export function HallOfficeDashboard({
                       <div className="flex flex-col gap-1">
                         {timeSlots.map((s) => (
                           <span key={s.slot} className="text-sm">
-                            Slot {s.slot}: {formatTime(s.time)}
+                            Slot {s.slot}: {formatDate(s.time)}
                           </span>
                         ))}
                       </div>

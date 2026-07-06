@@ -38,7 +38,13 @@ export async function credentialLogin(email: string, password: string, role: Rol
     return { ok: false, error: "Invalid email or password." }
   }
 
-  const valid = await bcrypt.compare(password, user.passwordHash)
+  let valid = false
+  try {
+    valid = await bcrypt.compare(password, user.passwordHash)
+  } catch {
+    await logActivity(email, role, "LOGIN_FAILED", " bcrypt error")
+    return { ok: false, error: "Invalid email or password." }
+  }
   if (!valid) {
     await logActivity(email, role, "LOGIN_FAILED", "Invalid credentials")
     return { ok: false, error: "Invalid email or password." }

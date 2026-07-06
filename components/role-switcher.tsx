@@ -16,7 +16,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { logoutAction } from "@/app/actions/auth"
 import { LogIn, LogOut, User } from "lucide-react"
-import type { Session } from "@/lib/session"
+import type { Session } from "@/lib/types"
 
 export function RoleSwitcher({ session }: { session: Session | null }) {
   const router = useRouter()

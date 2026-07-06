@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { StatusBadge, PriorityBadge, slaStatus } from "@/components/shared-ui"
 import { SiteHeader } from "@/components/site-header"
 import { ChangePasswordForm } from "@/components/admin/change-password"
+import { computeStats } from "@/lib/stats"
 import {
   ClipboardList,
   Search,
@@ -28,12 +29,7 @@ export default async function StudentDashboard() {
     getBuildings(),
   ])
 
-  const total = complaints.length
-  const open = complaints.filter((c) => !["Closed", "Resolved"].includes(c.status)).length
-  const resolved = complaints.filter((c) => ["Closed", "Resolved"].includes(c.status)).length
-  const overdue = complaints.filter(
-    (c) => c.dueAt && !["Closed", "Resolved"].includes(c.status) && slaStatus(c.dueAt, c.closedAt).label.includes("Overdue")
-  ).length
+  const { total, open, resolved, overdue } = computeStats(complaints)
 
   const buildingName = (id: number) => buildings.find((b) => b.id === id)?.name ?? "—"
   const recent = complaints.slice(0, 5)

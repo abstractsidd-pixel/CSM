@@ -1,7 +1,7 @@
 import type { ComplaintRow } from "@/lib/queries"
 
-export const OPEN_STATUSES = ["Registered", "Assigned", "In Progress", "Reactivated"]
-export const CLOSED_STATUSES = ["Resolved", "Closed"]
+const OPEN_STATUSES = ["Registered", "Assigned", "In Progress", "Reactivated"]
+const CLOSED_STATUSES = ["Resolved", "Closed"]
 
 export function computeStats(complaints: ComplaintRow[]) {
   const total = complaints.length

@@ -248,3 +248,21 @@
 [2026-06-30T15:14:23.077Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 19 Technician: Mahesh Pednekar
 [2026-06-30T15:16:36.199Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 19 Technician: Mahesh Pednekar
 [2026-06-30T15:17:34.995Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_STATUS_CHANGED | Complaint ID: 19 New Status: Resolved
+[2026-06-30T15:34:53.879Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-07-01T06:36:51.606Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-07-01T06:37:50.966Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_SUBMITTED | Docket: PENDING-20260701-120750 Building: 3 Priority: Minor
+[2026-07-01T06:37:57.420Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-07-01T06:38:21.154Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-07-01T06:38:38.715Z] [HallOffice] hall.office@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-07-01T06:38:52.904Z] [HallOffice] hall.office@iitgoa.ac.in | COMPLAINT_APPROVED | Complaint ID: 20 New Docket: IITGoa/CMS/BH-1/ELEC/2026/0005
+[2026-07-01T06:39:39.562Z] [HallOffice] hall.office@iitgoa.ac.in | LOGOUT | User logged out
+[2026-07-01T06:39:53.521Z] [JE] je@iitgoa.ac.in | LOGIN_FAILED | Invalid credentials
+[2026-07-01T06:40:09.458Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-07-06T08:58:42.934Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_SUBMITTED | Docket: PENDING-20260706-142842 Building: 10 Priority: Minor
+[2026-07-06T08:58:48.986Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-07-06T08:59:04.293Z] [HallOffice] hall.office@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-07-06T08:59:14.984Z] [HallOffice] hall.office@iitgoa.ac.in | COMPLAINT_APPROVED | Complaint ID: 21 New Docket: IITGoa/CMS/B2/ELEC/2026/0001
+[2026-07-06T08:59:21.921Z] [HallOffice] hall.office@iitgoa.ac.in | LOGOUT | User logged out
+[2026-07-06T08:59:36.546Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-07-06T09:24:01.868Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-07-06T09:36:33.226Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login

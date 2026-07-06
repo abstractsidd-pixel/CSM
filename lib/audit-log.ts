@@ -4,7 +4,7 @@ import path from "path"
 const LOG_DIR = path.join(process.cwd(), "logs")
 const LOG_FILE = path.join(LOG_DIR, "activity.log")
 
-export interface AuditEntry {
+interface AuditEntry {
   timestamp: string
   user: string
   role: string
@@ -20,10 +20,6 @@ async function ensureLogDir() {
   }
 }
 
-function formatTimestamp(): string {
-  return new Date().toISOString()
-}
-
 export async function logActivity(
   user: string,
   role: string,
@@ -34,7 +30,7 @@ export async function logActivity(
     await ensureLogDir()
 
     const entry: AuditEntry = {
-      timestamp: formatTimestamp(),
+      timestamp: new Date().toISOString(),
       user,
       role,
       action,

@@ -313,12 +313,6 @@ export function TrackView({
 
             if (timeSlots.length === 0) return null
 
-            const formatTime = (time: Date | string | null) => {
-              if (!time) return ""
-              const t = new Date(time)
-              return `${t.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}, ${t.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
-            }
-
             return (
               <Card>
                 <CardHeader>
@@ -341,7 +335,7 @@ export function TrackView({
                         <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium">
                           {s.slot}
                         </span>
-                        <span>{formatTime(s.time)}</span>
+                        <span>{formatDate(s.time)}</span>
                         {complaint.selectedTimeSlot === s.slot && (
                           <span className="ml-auto rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
                             Confirmed

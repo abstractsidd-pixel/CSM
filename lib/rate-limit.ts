@@ -45,8 +45,19 @@ export function checkRateLimit(
 export async function getClientIp(): Promise<string> {
   const h = await headers()
   const forwarded = h.get("x-forwarded-for")
-  if (forwarded) return forwarded.split(",")[0].trim()
+  if (forwarded) {
+    const parts = forwarded.split(",").map((p) => p.trim())
+    // Take rightmost non-local entry — last added by trusted proxy = original client
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const ip = parts[i]
+      if (ip && !ip.startsWith("127.") && !ip.startsWith("::1") && ip !== "unknown") {
+        return ip
+      }
+    }
+  }
   const real = h.get("x-real-ip")
-  if (real) return real.trim()
+  if (real && !real.startsWith("127.") && !real.startsWith("::1") && real !== "unknown") {
+    return real.trim()
+  }
   return "127.0.0.1"
 }

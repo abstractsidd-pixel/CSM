@@ -4,16 +4,25 @@ import { isAdminRole } from "@/lib/constants"
 import { RoleSwitcher } from "@/components/role-switcher"
 import { Building2 } from "lucide-react"
 import { NavLinks } from "@/components/nav-links"
+import { NotificationBell } from "@/components/notification-bell"
+import { getNotificationsByEmail, getUnreadNotificationCount } from "@/lib/queries"
 
 export async function SiteHeader() {
   const session = await getSession()
   const admin = isAdminRole(session?.role)
   const isHallOffice = session?.role === "HallOffice"
 
+  let notifications: Awaited<ReturnType<typeof getNotificationsByEmail>> = []
+  let unreadCount = 0
+  if (session?.email) {
+    notifications = await getNotificationsByEmail(session.email)
+    unreadCount = await getUnreadNotificationCount(session.email)
+  }
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-4 sm:px-6">
+        <Link href="/" className="flex items-center gap-2.5 shrink-0 order-last md:order-first">
           <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Building2 className="size-5" />
           </span>
@@ -26,6 +35,9 @@ export async function SiteHeader() {
         <NavLinks isAdmin={admin} role={isHallOffice ? "HallOffice" : session?.role} />
 
         <div className="ml-auto flex items-center gap-2">
+          {session?.email && (
+            <NotificationBell notifications={notifications} unreadCount={unreadCount} />
+          )}
           <RoleSwitcher session={session} />
         </div>
       </div>

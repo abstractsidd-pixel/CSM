@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { decryptSession } from "@/lib/session-crypto"
 import { isAdminRole } from "@/lib/constants"
-import type { Role } from "@/lib/constants"
+import type { Session } from "@/lib/types"
 
 const COOKIE = "cms_session"
-
-type Session = {
-  role: Role
-  email: string
-  name: string
-  userId?: number
-  staffId?: number
-  subdivision?: string | null
-}
 
 async function getSessionFromMiddleware(raw: string): Promise<Session | null> {
   try {

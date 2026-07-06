@@ -14,7 +14,7 @@ import {
 } from "@/lib/queries"
 import { getSession } from "@/lib/session"
 import { StatusBadge, PriorityBadge, formatDate, slaStatus } from "@/components/shared-ui"
-import { ArrowLeft, MapPin, User, Mail, Clock, Image as ImageIcon, MessageSquare } from "lucide-react"
+import { ArrowLeft, MapPin, User, Mail, Clock, Image as ImageIcon } from "lucide-react"
 import { ComplaintActions } from "@/components/admin/complaint-actions"
 import { CommentSection } from "@/components/admin/comment-section"
 import { Star } from "lucide-react"

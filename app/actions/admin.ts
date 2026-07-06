@@ -15,38 +15,10 @@ import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import { logActivity } from "@/lib/audit-log"
 import { getSession } from "@/lib/session"
-import { checkRateLimit } from "@/lib/rate-limit"
 import { isAdminRole, ROLES, ADMIN_ROLES, PRIORITIES } from "@/lib/constants"
-import type { Role } from "@/lib/constants"
+import { checkMutationLimit, requireAdmin, requireEeOrDean } from "@/lib/auth-helpers"
 
-const MUTATION_LIMIT = 30
-const MUTATION_WINDOW_MS = 60 * 1000
 const MIN_PASSWORD_LENGTH = 6
-
-async function checkMutationLimit(): Promise<string | null> {
-  const session = await getSession()
-  const key = `mut:${session?.email || "anonymous"}`
-  const { allowed, retryAfterMs } = checkRateLimit(key, MUTATION_LIMIT, MUTATION_WINDOW_MS)
-  if (!allowed) {
-    return `Too many requests. Please wait ${Math.ceil(retryAfterMs / 1000)} seconds.`
-  }
-  return null
-}
-
-function requireAdmin(): Promise<string | null> {
-  return getSession().then((s) => {
-    if (!s || !isAdminRole(s.role)) return "Unauthorized."
-    return null
-  })
-}
-
-function requireEeOrDean(): Promise<string | null> {
-  return getSession().then((s) => {
-    if (!s) return "Unauthorized."
-    if (s.role !== "EE" && s.role !== "Dean") return "Requires EE or Dean role."
-    return null
-  })
-}
 
 function validatePassword(password: string): string | null {
   if (password.length < MIN_PASSWORD_LENGTH) return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`
@@ -62,10 +34,13 @@ export async function createBuilding(formData: FormData) {
   if (roleError) return { error: roleError }
 
   const session = await getSession()
-  const name = formData.get("name") as string
+  const name = (formData.get("name") as string)?.trim()
+  const code = (formData.get("code") as string)?.trim()
+  if (!name || name.length > 100) return { error: "Building name is required (max 100 chars)." }
+  if (code && code.length > 20) return { error: "Building code must be under 20 characters." }
   await db.insert(buildings).values({
     name,
-    code: formData.get("code") as string,
+    code: code || "",
     floors: Number(formData.get("floors")) || 1,
     area: (formData.get("area") as string) || null,
     isHostel: formData.get("isHostel") === "true",
@@ -106,13 +81,16 @@ export async function createStaff(formData: FormData) {
   const passwordHash = await bcrypt.hash(password, 12)
 
   const staffData = {
-    name: formData.get("name") as string,
-    email: formData.get("email") as string,
+    name: (formData.get("name") as string)?.trim(),
+    email: (formData.get("email") as string)?.trim(),
     role: (formData.get("role") as string) || "JE",
     subdivision: ((formData.get("subdivision") as string) || "").trim() || null,
     buildingId: formData.get("buildingId") ? Number(formData.get("buildingId")) : null,
     aeId: formData.get("aeId") ? Number(formData.get("aeId")) : null,
   }
+
+  if (!staffData.name || staffData.name.length > 100) return { error: "Staff name is required (max 100 chars)." }
+  if (!staffData.email || staffData.email.length > 254) return { error: "Valid email is required." }
 
   const validRoles = ["HallOffice", ...ADMIN_ROLES]
   if (!validRoles.includes(staffData.role as typeof validRoles[number])) {
@@ -382,42 +360,15 @@ export async function deleteUser(id: number) {
   revalidatePath("/admin/users")
 }
 
-export async function updateUser(formData: FormData) {
-  const limitError = await checkMutationLimit()
-  if (limitError) return { error: limitError }
-
-  const roleError = await requireEeOrDean()
-  if (roleError) return { error: roleError }
-
-  const session = await getSession()
-  const id = Number(formData.get("id"))
-  if (!id) return { error: "User ID is required." }
-
-  const name = formData.get("name") as string
-  const email = formData.get("email") as string
-  const role = formData.get("role") as string
-
-  if (!ROLES.includes(role as typeof ROLES[number])) {
-    return { error: "Invalid role." }
-  }
-
-  const existingEmail = await db.select().from(users).where(eq(users.email, email)).limit(1)
-  if (existingEmail.length > 0 && existingEmail[0].id !== id) {
-    return { error: "A user with this email already exists." }
-  }
-
-  await db.update(users).set({ name, email, role }).where(eq(users.id, id))
-  await logActivity(session?.email || "system", session?.role || "system", "USER_UPDATED", `User ID: ${id} Name: ${name} Email: ${email} Role: ${role}`)
-  revalidatePath("/admin/users")
-  return { ok: true }
-}
-
 export async function createUsersBulk(rows: { name: string; email: string; password: string }[]) {
   const limitError = await checkMutationLimit()
   if (limitError) return { error: limitError }
 
   const roleError = await requireAdmin()
   if (roleError) return { error: roleError }
+
+  if (!Array.isArray(rows) || rows.length === 0) return { error: "No users provided." }
+  if (rows.length > 100) return { error: "Maximum 100 users per batch." }
 
   const session = await getSession()
 
@@ -504,30 +455,6 @@ export async function updateStaff(formData: FormData) {
   return { ok: true }
 }
 
-export async function updateUserPassword(formData: FormData) {
-  const limitError = await checkMutationLimit()
-  if (limitError) return { error: limitError }
-
-  const roleError = await requireEeOrDean()
-  if (roleError) return { error: roleError }
-
-  const session = await getSession()
-  const id = Number(formData.get("id"))
-  const password = formData.get("password") as string
-
-  if (!id || !password) return { error: "User ID and password are required." }
-
-  const pwError = validatePassword(password)
-  if (pwError) return { error: pwError }
-
-  const passwordHash = await bcrypt.hash(password, 12)
-  await db.update(users).set({ passwordHash }).where(eq(users.id, id))
-
-  await logActivity(session?.email || "system", session?.role || "system", "PASSWORD_RESET", `User ID: ${id}`)
-  revalidatePath("/admin/settings")
-  return { ok: true }
-}
-
 export async function changeOwnPassword(formData: FormData) {
   const limitError = await checkMutationLimit()
   if (limitError) return { error: limitError }
@@ -552,7 +479,12 @@ export async function changeOwnPassword(formData: FormData) {
   const userRows = await db.select().from(users).where(eq(users.id, userId)).limit(1)
   if (!userRows[0]) return { error: "User not found." }
 
-  const valid = await bcrypt.compare(currentPassword, userRows[0].passwordHash)
+  let valid = false
+  try {
+    valid = await bcrypt.compare(currentPassword, userRows[0].passwordHash)
+  } catch {
+    return { error: "Verification failed." }
+  }
   if (!valid) return { error: "Current password is incorrect." }
 
   const passwordHash = await bcrypt.hash(password, 12)

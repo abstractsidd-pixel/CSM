@@ -5,23 +5,16 @@ import { db } from "@/lib/db"
 import { staff, users } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { encryptSession, decryptSession } from "@/lib/session-crypto"
+import { ROLES } from "@/lib/constants"
 import type { Role } from "@/lib/constants"
+import type { Session } from "@/lib/types"
 
 const COOKIE = "cms_session"
-
-export type Session = {
-  role: Role
-  email: string
-  name: string
-  userId?: number
-  staffId?: number
-  subdivision?: string | null
-}
 
 function isValidSession(data: unknown): data is Session {
   if (typeof data !== "object" || data === null) return false
   const obj = data as Record<string, unknown>
-  if (typeof obj.role !== "string" || !["User", "HallOffice", "JE", "AE", "EE", "Dean"].includes(obj.role)) return false
+  if (typeof obj.role !== "string" || !(ROLES as readonly string[]).includes(obj.role)) return false
   if (typeof obj.email !== "string" || !obj.email.includes("@")) return false
   if (typeof obj.name !== "string") return false
   return true

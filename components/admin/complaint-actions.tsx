@@ -18,6 +18,7 @@ import { assignComplaint, updateStatus, reassignCategory } from "@/app/actions/c
 import { toast } from "sonner"
 import { Wrench, RefreshCw, ArrowRightLeft, CalendarDays, Check } from "lucide-react"
 import type { ComplaintRow, TechnicianRow, CategoryRow } from "@/lib/queries"
+import { formatDate } from "@/components/shared-ui"
 
 const NEXT_STATUSES: Record<string, string[]> = {
   "Pending Review": [],
@@ -217,10 +218,6 @@ export function ComplaintActions({
                 </Label>
                 <div className="flex flex-col gap-2">
                   {timeSlots.map((s) => {
-                    const t = s.time ? new Date(s.time) : null
-                    const label = t
-                      ? `${t.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}, ${t.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
-                      : ""
                     return (
                       <button
                         key={s.slot}
@@ -235,7 +232,7 @@ export function ComplaintActions({
                         <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium">
                           {s.slot}
                         </span>
-                        <span className="flex-1 text-left">{label}</span>
+                        <span className="flex-1 text-left">{formatDate(s.time)}</span>
                         {selectedSlot === s.slot && (
                           <Check className="size-4 text-primary" />
                         )}

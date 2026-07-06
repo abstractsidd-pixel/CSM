@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table"
 import type { TechnicianRow } from "@/lib/queries"
 import { cn } from "@/lib/utils"
-import { CheckCircle2, Edit3, Plus, Search, Upload, UserX } from "lucide-react"
+import { CheckCircle2, Edit3, Plus, Search, UserX } from "lucide-react"
 import { toast } from "sonner"
 
 const DEFAULT_TRADES = ["Civil", "Electrical", "Plumbing", "Housekeeping", "IT"]
@@ -124,10 +124,6 @@ export function TechniciansManager({ technicians }: { technicians: TechnicianRow
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" disabled title="Excel import will be wired in the next pass">
-                  <Upload className="size-4" />
-                  Import Excel
-                </Button>
                 <Button onClick={openCreate}>
                   <Plus className="size-4" />
                   Add Technician

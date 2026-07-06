@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { PRIORITY_BADGE, STATUS_BADGE } from "@/lib/constants"
-import { cn } from "@/lib/utils"
+import { cn, formatDate } from "@/lib/utils"
 
 export function StatusBadge({ status }: { status: string }) {
   return (
@@ -18,17 +18,7 @@ export function PriorityBadge({ priority }: { priority: string }) {
   )
 }
 
-export function formatDate(d: Date | string | null | undefined) {
-  if (!d) return "—"
-  const date = typeof d === "string" ? new Date(d) : d
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
+export { formatDate }
 
 export function slaStatus(dueAt: Date | string | null, closedAt: Date | string | null) {
   if (!dueAt) return { label: "—", className: "text-muted-foreground" }

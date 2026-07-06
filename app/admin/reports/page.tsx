@@ -18,7 +18,7 @@ import {
   getCategories,
   getTechnicians,
 } from "@/lib/queries"
-import { BarChart3, Download, FileSpreadsheet, Star, Timer, ShieldAlert } from "lucide-react"
+import { BarChart3, FileSpreadsheet, Star, Timer, ShieldAlert } from "lucide-react"
 import { getSession } from "@/lib/session"
 import Link from "next/link"
 
@@ -255,27 +255,6 @@ export default async function ReportsPage({
           </TableBody>
         </Table>
       </ReportCard>
-
-      <Card>
-        <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-medium">Exportable Reports</p>
-            <p className="text-sm text-muted-foreground">
-              PDF and Excel export controls are placed here for the next integration pass.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" disabled>
-              <Download className="size-4" />
-              Export PDF
-            </Button>
-            <Button variant="outline" disabled>
-              <Download className="size-4" />
-              Export Excel
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

@@ -20,8 +20,10 @@ import {
   ArrowRight,
 } from "lucide-react"
 import { StatusChart } from "@/components/admin/status-chart"
+import { checkAndNotifySlaBreaches } from "@/app/actions/sla-check"
 
 export default async function AdminDashboard() {
+  await checkAndNotifySlaBreaches()
   const session = await getSession()
   const [complaints, buildings, technicians, allStaff, categories] = await Promise.all([
     getAllComplaints(),

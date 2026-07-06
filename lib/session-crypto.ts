@@ -78,13 +78,13 @@ async function decrypt(encrypted: string): Promise<string | null> {
   }
 }
 
-export async function sign(payload: string): Promise<string> {
+async function sign(payload: string): Promise<string> {
   const key = await getCryptoKey()
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload))
   return `${payload}.${base64url(sig)}`
 }
 
-export async function unsign(signed: string): Promise<string | null> {
+async function unsign(signed: string): Promise<string | null> {
   const idx = signed.lastIndexOf(".")
   if (idx === -1) return null
   const payload = signed.slice(0, idx)
