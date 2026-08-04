@@ -2,11 +2,11 @@
 
 import { db } from "@/lib/db"
 import { complaints, complaintLogs } from "@/lib/db/schema"
-import { eq, desc, and, sql } from "drizzle-orm"
+import { eq, desc } from "drizzle-orm"
 import { getSession } from "@/lib/session"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/audit-log"
-import { buildings, categories } from "@/lib/db/schema"
+import { buildings } from "@/lib/db/schema"
 import { createNotification, notifyJeStaff } from "./notifications"
 import { checkMutationLimit } from "@/lib/auth-helpers"
 import { generateDocket } from "@/lib/docket"
@@ -34,24 +34,29 @@ export async function approveComplaint(formData: FormData) {
   if (!c) return { error: "Complaint not found." }
   if (c.status !== "Pending Review") return { error: "Complaint is not pending review." }
 
-  const realDocket = await generateDocket(c.buildingId, c.categoryId, [
-    sql`${complaints.status} != 'Pending Review'`,
-    sql`${complaints.status} != 'Rejected'`,
-  ])
-
   const buildingRows = await db.select().from(buildings).where(eq(buildings.id, c.buildingId)).limit(1)
   const jeId = buildingRows[0]?.jeId ?? null
 
-  await db
-    .update(complaints)
-    .set({
-      docketNumber: realDocket,
-      status: "Registered",
-      reviewedBy: session.staffId ?? null,
-      reviewedAt: new Date(),
-      jeId,
-    })
-    .where(eq(complaints.id, id))
+  let realDocket = ""
+  for (let attempt = 0; attempt < 3; attempt++) {
+    realDocket = await generateDocket(c.buildingId, c.categoryId)
+    try {
+      await db
+        .update(complaints)
+        .set({
+          docketNumber: realDocket,
+          status: "Registered",
+          reviewedBy: session.staffId ?? null,
+          reviewedAt: new Date(),
+          jeId,
+        })
+        .where(eq(complaints.id, id))
+      break
+    } catch (e: any) {
+      if (e?.code === "23505" && attempt < 2) continue
+      throw e
+    }
+  }
 
   await db.insert(complaintLogs).values({
     complaintId: id,

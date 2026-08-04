@@ -1,6 +1,6 @@
 import { db } from "@/lib/db"
 import { buildings, categories, complaints } from "@/lib/db/schema"
-import { eq, and, sql, type SQL } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 
 function pad(n: number, len = 4) {
   return String(n).padStart(len, "0")
@@ -9,7 +9,6 @@ function pad(n: number, len = 4) {
 export async function generateDocket(
   buildingId: number,
   categoryId: number | null,
-  extraConditions?: SQL[]
 ) {
   const year = new Date().getFullYear()
 
@@ -30,18 +29,12 @@ export async function generateDocket(
     categoryCode = catRows[0]?.code ?? "GEN"
   }
 
-  const conditions = [
-    sql`EXTRACT(YEAR FROM ${complaints.createdAt}) = ${year}`,
-    sql`${complaints.buildingId} = ${buildingId}`,
-    sql`COALESCE(${complaints.categoryId}, 0) = COALESCE(${categoryId ?? 0}, 0)`,
-    ...(extraConditions || []),
-  ]
-
-  const [{ count }] = await db
-    .select({ count: sql<number>`count(*)::int` })
+  const prefix = `IITGoa/CMS/${buildingCode}/${categoryCode}/${year}/`
+  const [{ maxSeq }] = await db
+    .select({ maxSeq: sql<number>`COALESCE(MAX(CAST(SUBSTRING(${complaints.docketNumber} FROM ${prefix.length + 1} FOR 4) AS int)), 0)` })
     .from(complaints)
-    .where(and(...conditions))
+    .where(sql`${complaints.docketNumber} LIKE ${prefix + '%'}`)
 
-  const seq = count + 1
-  return `IITGoa/CMS/${buildingCode}/${categoryCode}/${year}/${pad(seq)}`
+  const seq = maxSeq + 1
+  return `${prefix}${pad(seq)}`
 }
