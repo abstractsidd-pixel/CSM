@@ -71,6 +71,11 @@ export async function middleware(request: NextRequest) {
       return addSecurityHeaders(NextResponse.redirect(new URL("/admin", request.url)))
     }
 
+    // /admin/track — removed, redirect to complaints
+    if (pathname.startsWith("/admin/track")) {
+      return addSecurityHeaders(NextResponse.redirect(new URL("/admin/complaints", request.url)))
+    }
+
     return addSecurityHeaders(NextResponse.next())
   }
 
@@ -103,7 +108,15 @@ export async function middleware(request: NextRequest) {
     return addSecurityHeaders(NextResponse.next())
   }
 
-  // /register, /track, /feedback — any authenticated user
+  // /register, /track, /admin/track — User role only (students/faculty)
+  if (pathname.startsWith("/register") || pathname.startsWith("/track")) {
+    if (role !== "User") {
+      return addSecurityHeaders(NextResponse.redirect(new URL("/admin", request.url)))
+    }
+    return addSecurityHeaders(NextResponse.next())
+  }
+
+  // /feedback — any authenticated user
   return addSecurityHeaders(NextResponse.next())
 }
 

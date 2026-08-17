@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { registerComplaint } from "@/app/actions/complaints"
-import { PRIORITIES } from "@/lib/constants"
 import { toast } from "sonner"
 import { CheckCircle2, Copy, Upload, X } from "lucide-react"
 import type { BuildingRow, CategoryRow } from "@/lib/queries"
@@ -42,7 +41,6 @@ export function RegisterForm({
   const [buildingId, setBuildingId] = useState<string | null>(null)
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [subcategoryId, setSubcategoryId] = useState<string | null>(null)
-  const [priority, setPriority] = useState<string | null>("Minor")
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoPath, setPhotoPath] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -54,7 +52,9 @@ export function RegisterForm({
   )
   const isOther = categoryId === "other"
 
-  const slaLabel = sla.find((s) => s.priority === priority)?.label
+  const selectedSub = subs.find((c) => String(c.id) === subcategoryId)
+  const resolvedPriority = selectedSub?.priority || "Minor"
+  const slaLabel = sla.find((s) => s.priority === resolvedPriority)?.label
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -96,7 +96,7 @@ export function RegisterForm({
       return
     }
     formData.set("buildingId", buildingId)
-    formData.set("priority", priority ?? "Minor")
+    formData.set("priority", resolvedPriority)
     if (photoPath) formData.set("photoPath", photoPath)
 
     if (!isOther) {
@@ -254,25 +254,12 @@ export function RegisterForm({
             </Field>
           )}
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Priority">
-              <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORITIES.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {slaLabel && (
-                <p className="mt-1 text-xs text-muted-foreground">Target resolution: {slaLabel}</p>
-              )}
-            </Field>
-          </div>
+          {subcategoryId && selectedSub?.priority && (
+            <p className="text-xs text-muted-foreground">
+              Priority: <span className="font-medium text-foreground">{resolvedPriority}</span>
+              {slaLabel && ` · Target resolution: ${slaLabel}`}
+            </p>
+          )}
 
           <div className="flex flex-col gap-3">
             <Label className="text-sm">Preferred Visit Times <span className="text-destructive">*</span></Label>

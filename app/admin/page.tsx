@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { StatusChart } from "@/components/admin/status-chart"
 import { checkAndNotifySlaBreaches } from "@/app/actions/sla-check"
+import { scopeComplaints } from "@/lib/complaint-scope"
 
 export default async function AdminDashboard() {
   await checkAndNotifySlaBreaches()
@@ -34,26 +35,7 @@ export default async function AdminDashboard() {
   ])
 
   const visibleStatuses = ["Registered", "Assigned", "In Progress", "Resolved", "Closed", "Reactivated"]
-
-  const scoped =
-    session?.role === "JE" && session.staffId
-      ? (() => {
-          const jeStaff = allStaff.find((s) => s.id === session.staffId)
-          const division = jeStaff?.subdivision?.trim()
-          if (!division) return []
-
-          const divisionCategoryIds = categories
-            .filter((c) => c.level === 1 && c.name === division)
-            .map((c) => c.id)
-
-          return complaints.filter(
-            (c) =>
-              c.categoryId &&
-              divisionCategoryIds.includes(c.categoryId) &&
-              visibleStatuses.includes(c.status),
-          )
-        })()
-      : complaints.filter((c) => visibleStatuses.includes(c.status))
+  const scoped = scopeComplaints(complaints, categories, allStaff, session, visibleStatuses)
 
   const stats = computeStats(scoped)
   const recent = scoped.slice(0, 8)

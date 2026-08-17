@@ -41,11 +41,31 @@ export default async function ComplaintDetailPage({
 
   if (session?.role === "JE" && session.staffId) {
     const jeStaff = allStaff.find((s) => s.id === session.staffId)
-    const division = jeStaff?.subdivision?.trim()
-    if (!division) notFound()
+    const divisions = jeStaff?.subdivision
+      ? jeStaff.subdivision.split(",").map((d) => d.trim()).filter(Boolean)
+      : []
+
+    if (divisions.length === 0) notFound()
 
     const divisionCategoryIds = categories
-      .filter((c) => c.level === 1 && c.name === division)
+      .filter((c) => c.level === 1 && divisions.includes(c.name))
+      .map((c) => c.id)
+
+    if (!complaint.categoryId || !divisionCategoryIds.includes(complaint.categoryId)) {
+      notFound()
+    }
+  }
+
+  if (session?.role === "AE" && session.staffId) {
+    const jeDivisions = allStaff
+      .filter((s) => s.role === "JE" && s.aeId === session.staffId && s.subdivision)
+      .flatMap((s) => s.subdivision!.split(",").map((d) => d.trim()))
+      .filter(Boolean)
+
+    if (jeDivisions.length === 0) notFound()
+
+    const divisionCategoryIds = categories
+      .filter((c) => c.level === 1 && jeDivisions.includes(c.name))
       .map((c) => c.id)
 
     if (!complaint.categoryId || !divisionCategoryIds.includes(complaint.categoryId)) {

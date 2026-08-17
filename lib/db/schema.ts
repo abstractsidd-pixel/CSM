@@ -47,6 +47,7 @@ export const categories = pgTable("categories", {
   parentId: integer("parent_id"),
   level: integer("level").notNull().default(1),
   trade: text("trade"),
+  priority: text("priority"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 

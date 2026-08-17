@@ -280,3 +280,19 @@
 [2026-08-04T09:37:26.372Z] [Dean] dean@iitgoa.ac.in | TECHNICIAN_STATUS_CHANGED | Technician ID: 6 Status: Active
 [2026-08-04T09:39:37.499Z] [Dean] dean@iitgoa.ac.in | STAFF_CREATED | Staff: Civil (civil@iitgoa.ac.in) Role: JE
 [2026-08-04T10:03:09.664Z] [Dean] dean@iitgoa.ac.in | LOGOUT | User logged out
+[2026-08-05T05:25:25.714Z] [EE] ee@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-08-05T07:08:05.345Z] [EE] ee@iitgoa.ac.in | CATEGORY_DELETED | Category ID: 20
+[2026-08-05T07:08:26.770Z] [EE] ee@iitgoa.ac.in | CATEGORY_CREATED | Category: Study Table
+[2026-08-05T07:15:24.126Z] [EE] ee@iitgoa.ac.in | LOGOUT | User logged out
+[2026-08-05T07:15:39.661Z] [JE] sidd@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-08-05T07:16:41.457Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-08-05T07:17:42.461Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | COMPLAINT_REGISTERED | Docket: IITGoa/CMS/ACB-B/ELEC/2026/0001 Building: 2 Priority: Major
+[2026-08-05T07:19:34.131Z] [JE] sidd@iitgoa.ac.in | COMPLAINT_ASSIGNED | Complaint ID: 24 Technician: Mahesh Pednekar
+[2026-08-05T07:23:25.609Z] [JE] sidd@iitgoa.ac.in | LOGOUT | User logged out
+[2026-08-05T07:23:40.432Z] [EE] ee@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-08-05T07:44:50.124Z] [EE] ee@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 17
+[2026-08-05T07:45:13.010Z] [EE] ee@iitgoa.ac.in | LOGOUT | User logged out
+[2026-08-05T07:45:26.261Z] [JE] plumber@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-08-05T07:45:39.118Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
+[2026-08-05T07:46:10.690Z] [EE] ee@iitgoa.ac.in | LOGIN | Successful credential-based login
+[2026-08-05T07:46:39.223Z] [EE] ee@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 17

@@ -39,8 +39,15 @@ export function CreateStaffForm({
   const [role, setRole] = useState("JE")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
+  const [selectedDivisions, setSelectedDivisions] = useState<string[]>([])
 
   const aeList = staff.filter((s) => s.role === "AE")
+
+  function toggleDivision(name: string) {
+    setSelectedDivisions((prev) =>
+      prev.includes(name) ? prev.filter((d) => d !== name) : [...prev, name],
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,6 +65,7 @@ export function CreateStaffForm({
       const form = e.target as HTMLFormElement
       const formData = new FormData(form)
       formData.set("password", password)
+      formData.set("subdivision", selectedDivisions.join(","))
       const result = await createStaff(formData)
       if (result.ok) {
         toast.success("Staff member added successfully.")
@@ -65,6 +73,7 @@ export function CreateStaffForm({
         setPassword("")
         setConfirm("")
         setRole("JE")
+        setSelectedDivisions([])
       } else {
         toast.error(result.error || "Failed to add staff.")
       }
@@ -115,20 +124,24 @@ export function CreateStaffForm({
       )}
       {role !== "HallOffice" && (
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="subdivision">Division</Label>
-          <select
-            id="subdivision"
-            name="subdivision"
-            defaultValue=""
-            className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <option value="">Select Division</option>
+          <Label>Divisions</Label>
+          <div className="flex flex-wrap gap-2 rounded-lg border border-input p-2.5">
             {divisions.map((div) => (
-              <option key={div.id} value={div.name}>
+              <label key={div.id} className="flex items-center gap-1.5 text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedDivisions.includes(div.name)}
+                  onChange={() => toggleDivision(div.name)}
+                  className="rounded border-input"
+                />
                 {div.name}
-              </option>
+              </label>
             ))}
-          </select>
+            {divisions.length === 0 && (
+              <span className="text-xs text-muted-foreground">No divisions created yet.</span>
+            )}
+          </div>
+          <input type="hidden" name="subdivision" value={selectedDivisions.join(",")} />
         </div>
       )}
       <div className="flex flex-col gap-1.5">

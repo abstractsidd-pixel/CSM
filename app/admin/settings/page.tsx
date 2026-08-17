@@ -260,35 +260,37 @@ export default async function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Parent</TableHead>
-                  <TableHead>Division</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>{category.level}</TableCell>
-                    <TableCell>{categoryName(category.parentId)}</TableCell>
-                    <TableCell>{category.trade || "-"}</TableCell>
-                    <TableCell className="text-right">
-                      <form action={async () => { "use server"; await deleteCategory(category.id) }}>
-                        <Button variant="ghost" size="sm" type="submit">
-                          <Trash2 className="size-3.5" />
-                          Delete
-                        </Button>
-                      </form>
-                    </TableCell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead>Parent</TableHead>
+                    <TableHead>Division</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {categories.map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell>{category.level === 1 ? "Category" : "Sub-category"}</TableCell>
+                      <TableCell>{categoryName(category.parentId)}</TableCell>
+                      <TableCell>{category.trade || "-"}</TableCell>
+                      <TableCell>{category.priority || "-"}</TableCell>
+                      <TableCell className="text-right">
+                        <form action={async () => { "use server"; await deleteCategory(category.id) }}>
+                          <Button variant="ghost" size="sm" type="submit">
+                            <Trash2 className="size-3.5" />
+                            Delete
+                          </Button>
+                        </form>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
           </CardContent>
         </Card>
 
@@ -318,6 +320,13 @@ export default async function SettingsPage() {
                     {div.name}
                   </option>
                 ))}
+              </FormSelect>
+              <FormSelect name="priority" label="Priority" defaultValue="">
+                <option value="">None</option>
+                <option value="Minor">Minor</option>
+                <option value="Major">Major</option>
+                <option value="Critical">Critical</option>
+                <option value="Upgradation">Upgradation</option>
               </FormSelect>
               <Button type="submit">Add Category</Button>
             </form>

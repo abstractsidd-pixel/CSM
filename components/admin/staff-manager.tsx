@@ -52,6 +52,7 @@ export function StaffManager({
 }) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editForm, setEditForm] = useState<StaffMember | null>(null)
+  const [editDivisions, setEditDivisions] = useState<string[]>([])
   const router = useRouter()
 
   const canEditDelete = sessionRole === "EE" || sessionRole === "Dean"
@@ -64,11 +65,13 @@ export function StaffManager({
   const startEdit = (member: StaffMember) => {
     setEditingId(member.id)
     setEditForm({ ...member })
+    setEditDivisions(member.subdivision ? member.subdivision.split(",").map((d) => d.trim()).filter(Boolean) : [])
   }
 
   const cancelEdit = () => {
     setEditingId(null)
     setEditForm(null)
+    setEditDivisions([])
   }
 
   const handleDelete = async (id: number) => {
@@ -89,14 +92,19 @@ export function StaffManager({
     formData.set("name", editForm.name)
     formData.set("email", editForm.email)
     formData.set("role", editForm.role)
-    formData.set("subdivision", editForm.subdivision || "")
+    formData.set("subdivision", editDivisions.join(","))
     formData.set("buildingId", editForm.buildingId ? String(editForm.buildingId) : "")
     formData.set("aeId", editForm.aeId ? String(editForm.aeId) : "")
     try {
-      await updateStaff(formData)
+      const result = await updateStaff(formData)
+      if (result?.error) {
+        toast.error(result.error)
+        return
+      }
       toast.success("Staff member updated.")
       setEditingId(null)
       setEditForm(null)
+      setEditDivisions([])
       router.refresh()
     } catch {
       toast.error("Failed to update staff member.")
@@ -104,6 +112,12 @@ export function StaffManager({
   }
 
   const aeList = staff.filter((s) => s.role === "AE")
+
+  function toggleEditDivision(name: string) {
+    setEditDivisions((prev) =>
+      prev.includes(name) ? prev.filter((d) => d !== name) : [...prev, name],
+    )
+  }
 
   return (
     <>
@@ -113,7 +127,7 @@ export function StaffManager({
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
-            <TableHead>Division</TableHead>
+            <TableHead>Divisions</TableHead>
             <TableHead>Building</TableHead>
             <TableHead>Reports To (AE)</TableHead>
             {canEditDelete && <TableHead className="text-right">Actions</TableHead>}
@@ -151,18 +165,23 @@ export function StaffManager({
                   </select>
                 </TableCell>
                 <TableCell>
-                  <select
-                    value={editForm.subdivision || ""}
-                    onChange={(e) => setEditForm({ ...editForm, subdivision: e.target.value || null })}
-                    className="h-8 w-full rounded-lg border border-input bg-background px-2 text-xs outline-none"
-                  >
-                    <option value="">None</option>
-                    {divisions.map((div) => (
-                      <option key={div.id} value={div.name}>
-                        {div.name}
-                      </option>
-                    ))}
-                  </select>
+                  {editForm.role !== "HallOffice" ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {divisions.map((div) => (
+                        <label key={div.id} className="flex items-center gap-1 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={editDivisions.includes(div.name)}
+                            onChange={() => toggleEditDivision(div.name)}
+                            className="rounded border-input"
+                          />
+                          {div.name}
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <select
@@ -224,7 +243,15 @@ export function StaffManager({
                 <TableCell className="font-medium">{member.name}</TableCell>
                 <TableCell>{member.email}</TableCell>
                 <TableCell>{member.role}</TableCell>
-                <TableCell>{member.subdivision || "-"}</TableCell>
+                <TableCell>
+                  {member.subdivision
+                    ? member.subdivision.split(",").map((d) => (
+                        <span key={d} className="mr-1 mb-0.5 inline-block whitespace-nowrap rounded-full bg-secondary px-2 py-0.5 text-xs">
+                          {d.trim()}
+                        </span>
+                      ))
+                    : "-"}
+                </TableCell>
                 <TableCell>
                   {buildings.find((b) => b.id === member.buildingId)?.name ?? "-"}
                 </TableCell>

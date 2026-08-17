@@ -194,11 +194,15 @@ export async function createCategory(formData: FormData) {
 
   const session = await getSession()
   const name = formData.get("name") as string
+  const level = Number(formData.get("level")) || 1
+  const priority = (formData.get("priority") as string) || null
+
   await db.insert(categories).values({
     name,
     parentId: formData.get("parentId") ? Number(formData.get("parentId")) : null,
-    level: Number(formData.get("level")) || 1,
+    level,
     trade: (formData.get("trade") as string) || null,
+    priority: level === 2 ? priority : null,
   })
   await logActivity(session?.email || "system", session?.role || "system", "CATEGORY_CREATED", `Category: ${name}`)
   revalidatePath("/admin/settings")
@@ -433,8 +437,9 @@ export async function updateStaff(formData: FormData) {
   if (!id) return { error: "Staff ID is required." }
 
   const email = formData.get("email") as string
-  const existingEmail = await db.select().from(users).where(eq(users.email, email)).limit(1)
-  if (existingEmail.length > 0 && existingEmail[0].id !== id) {
+  const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1)
+  const staffRow = await db.select().from(staff).where(eq(staff.id, id)).limit(1)
+  if (existingUser.length > 0 && staffRow.length > 0 && existingUser[0].email !== staffRow[0].email) {
     return { error: "A user with this email already exists." }
   }
 

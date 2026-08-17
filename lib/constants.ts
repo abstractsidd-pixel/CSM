@@ -1,7 +1,7 @@
 export const ROLES = ["User", "HallOffice", "JE", "AE", "EE", "Dean"] as const
 export type Role = (typeof ROLES)[number]
 
-export const PRIORITIES = ["Critical", "Major", "Minor"] as const
+export const PRIORITIES = ["Critical", "Major", "Minor", "Upgradation"] as const
 
 // Complaint lifecycle statuses
 export const STATUSES = [
@@ -19,6 +19,7 @@ export const PRIORITY_BADGE: Record<string, string> = {
   Critical: "bg-destructive/15 text-destructive border-destructive/30",
   Major: "bg-chart-3/15 text-chart-3 border-chart-3/30",
   Minor: "bg-muted text-muted-foreground border-border",
+  Upgradation: "bg-chart-2/15 text-chart-2 border-chart-2/30",
 }
 
 export const STATUS_BADGE: Record<string, string> = {

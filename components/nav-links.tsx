@@ -18,33 +18,27 @@ const USER_LINKS = [
 const JE_LINKS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/complaints", label: "Complaints" },
-  { href: "/admin/track", label: "Track" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/notifications", label: "Notifications" },
-  { href: "/register", label: "Register" },
 ]
 
 const AE_LINKS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/complaints", label: "Complaints" },
-  { href: "/admin/track", label: "Track" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/notifications", label: "Notifications" },
-  { href: "/register", label: "Register" },
 ]
 
 const EE_DEAN_LINKS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/complaints", label: "Complaints" },
-  { href: "/admin/track", label: "Track" },
   { href: "/admin/technicians", label: "Technicians" },
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/admin/users", label: "Users" },
   { href: "/notifications", label: "Notifications" },
-  { href: "/register", label: "Register" },
 ]
 
 const HALL_OFFICE_LINKS = [
