@@ -37,8 +37,6 @@ export function CreateStaffForm({
 }) {
   const [loading, setLoading] = useState(false)
   const [role, setRole] = useState("JE")
-  const [password, setPassword] = useState("")
-  const [confirm, setConfirm] = useState("")
   const [selectedDivisions, setSelectedDivisions] = useState<string[]>([])
 
   const aeList = staff.filter((s) => s.role === "AE")
@@ -51,27 +49,15 @@ export function CreateStaffForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.")
-      return
-    }
-    if (password !== confirm) {
-      toast.error("Passwords do not match.")
-      return
-    }
-
     setLoading(true)
     try {
       const form = e.target as HTMLFormElement
       const formData = new FormData(form)
-      formData.set("password", password)
       formData.set("subdivision", selectedDivisions.join(","))
       const result = await createStaff(formData)
       if (result.ok) {
         toast.success("Staff member added successfully.")
         form.reset()
-        setPassword("")
-        setConfirm("")
         setRole("JE")
         setSelectedDivisions([])
       } else {
@@ -159,29 +145,6 @@ export function CreateStaffForm({
             </option>
           ))}
         </select>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Min. 6 characters"
-          required
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="confirm-password">Confirm Password</Label>
-        <Input
-          id="confirm-password"
-          type="password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          placeholder="Re-enter password"
-          required
-        />
       </div>
       <Button type="submit" disabled={loading}>
         {loading ? <Loader2 className="size-3.5 animate-spin mr-2" /> : null}

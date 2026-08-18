@@ -296,3 +296,10 @@
 [2026-08-05T07:45:39.118Z] [User] suryavanshi.siddharth.23033@iitgoa.ac.in | LOGOUT | User logged out
 [2026-08-05T07:46:10.690Z] [EE] ee@iitgoa.ac.in | LOGIN | Successful credential-based login
 [2026-08-05T07:46:39.223Z] [EE] ee@iitgoa.ac.in | STAFF_UPDATED | Staff ID: 17
+[2026-08-17T18:01:18.242Z] [Dean] abstract.sidd@gmail.com | STAFF_CREATED | Staff: Abstract Sidd (sidd.abstract@gmail.com) Role: JE
+[2026-08-17T18:01:52.450Z] [Dean] abstract.sidd@gmail.com | STAFF_UPDATED | Staff ID: 20
+[2026-08-18T08:58:02.301Z] [Dean] abstract.sidd@gmail.com | LOGOUT | User logged out
+[2026-08-18T08:58:09.901Z] [Dean] abstract.sidd@gmail.com | LOGOUT | User logged out
+[2026-08-18T09:01:13.352Z] [Dean] abstract.sidd@gmail.com | LOGOUT | User logged out
+[2026-08-18T09:09:32.642Z] [Dean] abstract.sidd@gmail.com | LOGOUT | User logged out
+[2026-08-18T09:13:12.284Z] [Dean] abstract.sidd@gmail.com | LOGOUT | User logged out

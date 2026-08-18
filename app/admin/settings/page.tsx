@@ -23,7 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ROLES } from "@/lib/constants"
 import {
   getBuildings,
   getCategories,
@@ -31,13 +30,11 @@ import {
   getNotificationTemplates,
   getSlaRules,
   getStaff,
-  getAllUsers,
 } from "@/lib/queries"
 import { Bell, Building2, Clock, Layers3, ShieldCheck, ShieldAlert, Trash2, Plus } from "lucide-react"
 import { getSession } from "@/lib/session"
 import Link from "next/link"
 import { StaffManager } from "@/components/admin/staff-manager"
-import { ChangePasswordForm } from "@/components/admin/change-password"
 import { CreateStaffForm } from "@/components/admin/create-staff-form"
 import { LogDownload } from "@/components/admin/log-download"
 
@@ -72,14 +69,13 @@ export default async function SettingsPage() {
   const canAddStaff = isAE || isEE || isDean
   const canViewStaff = isAE || isEE || isDean
 
-  const [buildings, categories, divisions, staff, slaRules, templates, allUsers] = await Promise.all([
+  const [buildings, categories, divisions, staff, slaRules, templates] = await Promise.all([
     getBuildings(),
     getCategories(),
     getDivisions(),
     getStaff(),
     getSlaRules(),
     getNotificationTemplates(),
-    getAllUsers(),
   ])
 
   const staffName = (id: number | null) => staff.find((s) => s.id === id)?.name ?? "-"
@@ -105,15 +101,13 @@ export default async function SettingsPage() {
     await updateTemplate(formData)
   }
 
-  const currentUser = allUsers.find((u) => u.email === session?.email)
-
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">System Settings</h1>
         <p className="text-sm text-muted-foreground">
-          {isJE && "Manage buildings, categories, and your account password."}
-          {isAE && "Manage buildings, categories, view IWD staff, and your account password."}
+          {isJE && "Manage buildings and categories."}
+          {isAE && "Manage buildings, categories, and view IWD staff."}
           {canManageStaff && "Configure CMS master data, SLA limits, staff access, and notification content."}
         </p>
       </div>
@@ -440,10 +434,6 @@ export default async function SettingsPage() {
         </section>
       )}
 
-      {/* Change Password — all roles */}
-      <section>
-        {currentUser && <ChangePasswordForm userId={currentUser.id} />}
-      </section>
     </div>
   )
 }

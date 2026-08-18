@@ -1,19 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { decryptSession } from "@/lib/session-crypto"
+import { getToken } from "next-auth/jwt"
 import { isAdminRole } from "@/lib/constants"
-import type { Session } from "@/lib/types"
-
-const COOKIE = "cms_session"
-
-async function getSessionFromMiddleware(raw: string): Promise<Session | null> {
-  try {
-    const data = await decryptSession(raw)
-    if (!data) return null
-    return data as Session
-  } catch {
-    return null
-  }
-}
 
 function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set("X-Frame-Options", "DENY")
@@ -21,43 +8,39 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
   response.headers.set("X-XSS-Protection", "1; mode=block")
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-  response.headers.set(
-    "Content-Security-Policy",
-    [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self'",
-      "connect-src 'self' https://vitals.vercel-insights.com",
-      "frame-ancestors 'none'",
-    ].join("; "),
-  )
   return response
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const raw = request.cookies.get(COOKIE)?.value
-  const session = raw ? await getSessionFromMiddleware(raw) : null
+
+  // Let NextAuth handle its own routes
+  if (pathname.startsWith("/api/auth")) {
+    return NextResponse.next()
+  }
+
+  const token = await getToken({ req: request })
 
   // Public pages — no auth required
   if (pathname === "/" || pathname === "/login") {
+    if (token && pathname === "/login") {
+      return addSecurityHeaders(NextResponse.redirect(new URL("/student", request.url)))
+    }
     return addSecurityHeaders(NextResponse.next())
   }
 
   // All other pages require authentication
-  if (!session) {
+  if (!token) {
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("redirect", pathname)
     return addSecurityHeaders(NextResponse.redirect(loginUrl))
   }
 
-  const role = session.role
+  const role = token.role as string | undefined
 
   // /admin/* — admin roles only
   if (pathname.startsWith("/admin")) {
-    if (!isAdminRole(role)) {
+    if (!role || !isAdminRole(role as any)) {
       return addSecurityHeaders(NextResponse.redirect(new URL("/", request.url)))
     }
 
@@ -71,7 +54,7 @@ export async function middleware(request: NextRequest) {
       return addSecurityHeaders(NextResponse.redirect(new URL("/admin", request.url)))
     }
 
-    // /admin/track — removed, redirect to complaints
+    // /admin/track — redirect to complaints
     if (pathname.startsWith("/admin/track")) {
       return addSecurityHeaders(NextResponse.redirect(new URL("/admin/complaints", request.url)))
     }
@@ -108,7 +91,7 @@ export async function middleware(request: NextRequest) {
     return addSecurityHeaders(NextResponse.next())
   }
 
-  // /register, /track, /admin/track — User role only (students/faculty)
+  // /register, /track — User role only
   if (pathname.startsWith("/register") || pathname.startsWith("/track")) {
     if (role !== "User") {
       return addSecurityHeaders(NextResponse.redirect(new URL("/admin", request.url)))
@@ -122,6 +105,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }

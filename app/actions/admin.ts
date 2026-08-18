@@ -12,19 +12,10 @@ import {
 } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
-import bcrypt from "bcryptjs"
 import { logActivity } from "@/lib/audit-log"
 import { getSession } from "@/lib/session"
 import { isAdminRole, ROLES, ADMIN_ROLES, PRIORITIES } from "@/lib/constants"
 import { checkMutationLimit, requireAdmin, requireEeOrDean } from "@/lib/auth-helpers"
-
-const MIN_PASSWORD_LENGTH = 6
-
-function validatePassword(password: string): string | null {
-  if (password.length < MIN_PASSWORD_LENGTH) return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`
-  if (password.length > 72) return "Password must not exceed 72 characters."
-  return null
-}
 
 export async function createBuilding(formData: FormData) {
   const limitError = await checkMutationLimit()
@@ -72,13 +63,6 @@ export async function createStaff(formData: FormData) {
   if (roleError) return { error: roleError }
 
   const session = await getSession()
-  const password = formData.get("password") as string
-  if (!password) return { error: "Password is required." }
-
-  const pwError = validatePassword(password)
-  if (pwError) return { error: pwError }
-
-  const passwordHash = await bcrypt.hash(password, 12)
 
   const staffData = {
     name: (formData.get("name") as string)?.trim(),
@@ -97,24 +81,7 @@ export async function createStaff(formData: FormData) {
     return { error: "Invalid role. Must be HallOffice, JE, AE, EE, or Dean." }
   }
 
-  await db.transaction(async (tx) => {
-    const existing = await tx.select().from(users).where(eq(users.email, staffData.email)).limit(1)
-    if (existing.length > 0) {
-      await tx.update(users).set({
-        name: staffData.name,
-        role: staffData.role,
-        passwordHash,
-      }).where(eq(users.email, staffData.email))
-    } else {
-      await tx.insert(users).values({
-        email: staffData.email,
-        name: staffData.name,
-        role: staffData.role,
-        passwordHash,
-      })
-    }
-    await tx.insert(staff).values(staffData)
-  })
+  await db.insert(staff).values(staffData)
 
   await logActivity(session?.email || "system", session?.role || "system", "STAFF_CREATED", `Staff: ${staffData.name} (${staffData.email}) Role: ${staffData.role}`)
   revalidatePath("/admin/settings")
@@ -305,49 +272,6 @@ export async function updateTemplate(formData: FormData) {
   return { ok: true }
 }
 
-export async function createUser(formData: FormData) {
-  const limitError = await checkMutationLimit()
-  if (limitError) return { error: limitError }
-
-  const roleError = await requireAdmin()
-  if (roleError) return { error: roleError }
-
-  const session = await getSession()
-  const email = formData.get("email") as string
-  const name = formData.get("name") as string
-  const role = (formData.get("role") as string) || "User"
-  const password = formData.get("password") as string
-
-  if (!email || !name || !password) {
-    return { error: "All fields are required." }
-  }
-
-  if (!ROLES.includes(role as typeof ROLES[number])) {
-    return { error: "Invalid role." }
-  }
-
-  const pwError = validatePassword(password)
-  if (pwError) return { error: pwError }
-
-  const existing = await db.select().from(users).where(eq(users.email, email)).limit(1)
-  if (existing.length > 0) {
-    return { error: "A user with this email already exists." }
-  }
-
-  const passwordHash = await bcrypt.hash(password, 12)
-
-  await db.insert(users).values({
-    email,
-    name,
-    role,
-    passwordHash,
-  })
-
-  await logActivity(session?.email || "system", session?.role || "system", "USER_CREATED", `User: ${name} (${email}) Role: ${role}`)
-  revalidatePath("/admin/users")
-  return { ok: true }
-}
-
 export async function deleteUser(id: number) {
   const limitError = await checkMutationLimit()
   if (limitError) return { error: limitError }
@@ -362,46 +286,6 @@ export async function deleteUser(id: number) {
   await db.delete(users).where(eq(users.id, id))
   await logActivity(session?.email || "system", session?.role || "system", "USER_DELETED", `User: ${userName} (${userEmail}) ID: ${id}`)
   revalidatePath("/admin/users")
-}
-
-export async function createUsersBulk(rows: { name: string; email: string; password: string }[]) {
-  const limitError = await checkMutationLimit()
-  if (limitError) return { error: limitError }
-
-  const roleError = await requireAdmin()
-  if (roleError) return { error: roleError }
-
-  if (!Array.isArray(rows) || rows.length === 0) return { error: "No users provided." }
-  if (rows.length > 100) return { error: "Maximum 100 users per batch." }
-
-  const session = await getSession()
-
-  for (const r of rows) {
-    const pwError = validatePassword(r.password)
-    if (pwError) return { error: `Password error for ${r.email}: ${pwError}` }
-  }
-
-  const existingEmails = await db.select({ email: users.email }).from(users)
-  const existingSet = new Set(existingEmails.map((e) => e.email))
-  const newRows = rows.filter((r) => !existingSet.has(r.email))
-  const skipped = rows.length - newRows.length
-
-  if (newRows.length === 0) {
-    return { ok: true, count: 0, skipped, error: skipped > 0 ? `All ${skipped} email(s) already exist.` : undefined }
-  }
-
-  const values = await Promise.all(
-    newRows.map(async (r) => ({
-      name: r.name,
-      email: r.email,
-      role: "User" as const,
-      passwordHash: await bcrypt.hash(r.password, 12),
-    })),
-  )
-  await db.insert(users).values(values)
-  await logActivity(session?.email || "system", session?.role || "system", "USERS_BULK_CREATED", `${newRows.length} users imported, ${skipped} skipped`)
-  revalidatePath("/admin/users")
-  return { ok: true, count: newRows.length, skipped }
 }
 
 export async function deleteStaff(id: number) {
@@ -456,46 +340,6 @@ export async function updateStaff(formData: FormData) {
     .where(eq(staff.id, id))
 
   await logActivity(session?.email || "system", session?.role || "system", "STAFF_UPDATED", `Staff ID: ${id}`)
-  revalidatePath("/admin/settings")
-  return { ok: true }
-}
-
-export async function changeOwnPassword(formData: FormData) {
-  const limitError = await checkMutationLimit()
-  if (limitError) return { error: limitError }
-
-  const session = await getSession()
-  if (!session) return { error: "Unauthorized." }
-
-  const currentPassword = formData.get("currentPassword") as string
-  const password = formData.get("password") as string
-  const userId = Number(formData.get("userId"))
-
-  if (!userId || !password) return { error: "Password is required." }
-  if (!currentPassword) return { error: "Current password is required." }
-
-  if (session.userId !== userId) {
-    return { error: "You can only change your own password." }
-  }
-
-  const pwError = validatePassword(password)
-  if (pwError) return { error: pwError }
-
-  const userRows = await db.select().from(users).where(eq(users.id, userId)).limit(1)
-  if (!userRows[0]) return { error: "User not found." }
-
-  let valid = false
-  try {
-    valid = await bcrypt.compare(currentPassword, userRows[0].passwordHash)
-  } catch {
-    return { error: "Verification failed." }
-  }
-  if (!valid) return { error: "Current password is incorrect." }
-
-  const passwordHash = await bcrypt.hash(password, 12)
-  await db.update(users).set({ passwordHash }).where(eq(users.id, userId))
-
-  await logActivity(session.email, session.role, "PASSWORD_CHANGED", `Self-service password change for User ID: ${userId}`)
   revalidatePath("/admin/settings")
   return { ok: true }
 }

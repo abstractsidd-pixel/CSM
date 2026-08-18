@@ -1,50 +1,24 @@
 "use server"
 
-import { cookies } from "next/headers"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { staff, users } from "@/lib/db/schema"
+import { staff } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
-import { encryptSession, decryptSession } from "@/lib/session-crypto"
-import { ROLES } from "@/lib/constants"
 import type { Role } from "@/lib/constants"
 import type { Session } from "@/lib/types"
 
-const COOKIE = "cms_session"
-
-function isValidSession(data: unknown): data is Session {
-  if (typeof data !== "object" || data === null) return false
-  const obj = data as Record<string, unknown>
-  if (typeof obj.role !== "string" || !(ROLES as readonly string[]).includes(obj.role)) return false
-  if (typeof obj.email !== "string" || !obj.email.includes("@")) return false
-  if (typeof obj.name !== "string") return false
-  return true
-}
-
 export async function getSession(): Promise<Session | null> {
-  const store = await cookies()
-  const raw = store.get(COOKIE)?.value
-  if (!raw) return null
-  try {
-    const data = await decryptSession(raw)
-    return isValidSession(data) ? data : null
-  } catch {
-    return null
-  }
-}
+  const nextAuthSession = await getServerSession(authOptions)
+  if (!nextAuthSession?.user?.email) return null
 
-async function setSessionCookie(session: Session) {
-  const store = await cookies()
-  const encrypted = await encryptSession(session)
-  store.set(COOKIE, encrypted, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: true,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  })
-}
+  const email = nextAuthSession.user.email
+  const name = nextAuthSession.user.name || ""
+  const role = (nextAuthSession as Record<string, unknown>).role as Role | undefined
+    ?? (nextAuthSession.user as Record<string, unknown>).role as Role | undefined
 
-export async function signInWithCredentials(userId: number, role: Role, email: string, name: string) {
+  if (!role) return null
+
   let staffId: number | undefined
   let subdivision: string | null | undefined
 
@@ -56,12 +30,5 @@ export async function signInWithCredentials(userId: number, role: Role, email: s
     }
   }
 
-  const session: Session = { role, email, name, userId, staffId, subdivision }
-  await setSessionCookie(session)
-  return session
-}
-
-export async function signOut() {
-  const store = await cookies()
-  store.delete(COOKIE)
+  return { role, email, name, staffId, subdivision }
 }
