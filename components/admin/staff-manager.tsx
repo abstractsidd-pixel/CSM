@@ -37,7 +37,6 @@ interface Division {
 }
 
 const STAFF_ROLES = ["HallOffice", "JE", "AE", "EE", "Dean"]
-const EDITABLE_ROLES = ["HallOffice", "JE", "AE"]
 
 export function StaffManager({
   staff,
@@ -58,8 +57,7 @@ export function StaffManager({
   const canEditDelete = sessionRole === "EE" || sessionRole === "Dean"
 
   const canEditMember = (member: StaffMember) => {
-    if (!canEditDelete) return false
-    return EDITABLE_ROLES.includes(member.role)
+    return canEditDelete
   }
 
   const startEdit = (member: StaffMember) => {

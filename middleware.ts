@@ -23,8 +23,13 @@ export async function middleware(request: NextRequest) {
 
   // Public pages — no auth required
   if (pathname === "/" || pathname === "/login") {
-    if (token && pathname === "/login") {
-      return addSecurityHeaders(NextResponse.redirect(new URL("/student", request.url)))
+    if (token) {
+      const role = token.role as string | undefined
+      if (pathname === "/login") {
+        if (role === "HallOffice") return addSecurityHeaders(NextResponse.redirect(new URL("/hall-office", request.url)))
+        if (isAdminRole(role as any)) return addSecurityHeaders(NextResponse.redirect(new URL("/admin", request.url)))
+        return addSecurityHeaders(NextResponse.redirect(new URL("/student", request.url)))
+      }
     }
     return addSecurityHeaders(NextResponse.next())
   }
