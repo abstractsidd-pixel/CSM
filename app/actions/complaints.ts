@@ -125,6 +125,12 @@ export async function registerComplaint(formData: FormData) {
         message: `A new ${priority} priority hostel complaint (${pendingDocket}) from ${building[0]?.name || "a hostel building"} is awaiting your review.`,
         complaintId: created.id,
         docketNumber: pendingDocket,
+        data: {
+          complainantName: complainantName || "",
+          buildingName: building[0]?.name || "",
+          priority,
+          description: description || "",
+        },
       })
     }
 
@@ -175,6 +181,11 @@ export async function registerComplaint(formData: FormData) {
     message: `A new ${priority} priority complaint (${docket}) has been registered in ${building[0]?.name || "your building"}.`,
     complaintId: created.id,
     docketNumber: docket,
+  }, {
+    complainantName: complainantName || "",
+    buildingName: building[0]?.name || "",
+    priority,
+    description: description || "",
   })
 
   return { docket: created.docketNumber }
@@ -254,6 +265,8 @@ export async function editComplaint(formData: FormData) {
     message: `Complaint ${existing.docketNumber} has been updated by the complainant.`,
     complaintId: id,
     docketNumber: existing.docketNumber,
+  }, {
+    complainantName: existing.complainantName || "",
   })
 
   return { ok: true }
@@ -331,6 +344,11 @@ export async function assignComplaint(formData: FormData) {
       message: `Your complaint ${c.docketNumber} has been assigned to ${technicianName || `technician #${technicianId}`}.${timeDetail}`,
       complaintId: id,
       docketNumber: c.docketNumber,
+      data: {
+        technicianName: technicianName || "",
+        expectedStart: expectedStart || "",
+        assignRemarks: assignRemarks || "",
+      },
     })
   }
 
@@ -380,6 +398,10 @@ export async function updateStatus(formData: FormData) {
       message: `Your complaint ${complaint.docketNumber} status has been changed to "${status}".${note ? ` Note: ${note}` : ""}`,
       complaintId: id,
       docketNumber: complaint.docketNumber,
+      data: {
+        status,
+        note: note || "",
+      },
     })
   }
 
@@ -466,6 +488,9 @@ export async function reactivateComplaint(formData: FormData) {
     message: `Complaint ${c.docketNumber} has been reactivated by the complainant. Reason: ${reason}`,
     complaintId: id,
     docketNumber: c.docketNumber,
+  }, {
+    reason,
+    complainantName: c.complainantName || "",
   })
 
   return { ok: true }
@@ -585,6 +610,10 @@ export async function addComment(formData: FormData) {
       message: `${session.name || session.email} commented on ${complaint.docketNumber}: "${message.length > 80 ? message.slice(0, 80) + "…" : message}"`,
       complaintId,
       docketNumber: complaint.docketNumber,
+      data: {
+        authorName: session.name || session.email,
+        comment: message,
+      },
     })
   }
 

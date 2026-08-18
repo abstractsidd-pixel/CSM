@@ -78,6 +78,9 @@ export async function approveComplaint(formData: FormData) {
       message: `Your complaint has been approved by Hall Office. Your docket number is ${realDocket}. You can now track it.`,
       complaintId: id,
       docketNumber: realDocket,
+      data: {
+        complainantName: c.complainantName || "",
+      },
     })
   }
 
@@ -87,6 +90,9 @@ export async function approveComplaint(formData: FormData) {
     message: `A hostel complaint (${realDocket}) has been approved and registered by Hall Office in ${buildingRows[0]?.name || "your building"}.`,
     complaintId: id,
     docketNumber: realDocket,
+  }, {
+    complainantName: c.complainantName || "",
+    buildingName: buildingRows[0]?.name || "",
   })
 
   return { ok: true }
@@ -137,6 +143,10 @@ export async function rejectComplaint(formData: FormData) {
       message: `Your complaint (${c.docketNumber}) has been rejected by Hall Office. Reason: ${reason}`,
       complaintId: id,
       docketNumber: c.docketNumber,
+      data: {
+        reason,
+        complainantName: c.complainantName || "",
+      },
     })
   }
 
