@@ -9,7 +9,6 @@ import {
   complaintLogs,
   complaintComments,
   feedback,
-  notificationTemplates,
   users,
   notifications,
 } from "@/lib/db/schema"
@@ -37,10 +36,6 @@ export async function getSlaRules() {
 
 export async function getStaff() {
   return db.select().from(staff).orderBy(asc(staff.name))
-}
-
-export async function getNotificationTemplates() {
-  return db.select().from(notificationTemplates).orderBy(asc(notificationTemplates.event))
 }
 
 export async function getAllComplaints() {

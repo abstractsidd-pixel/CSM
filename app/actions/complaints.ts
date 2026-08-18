@@ -345,6 +345,7 @@ export async function assignComplaint(formData: FormData) {
       complaintId: id,
       docketNumber: c.docketNumber,
       data: {
+        complainantName: c.complainantName || "",
         technicianName: technicianName || "",
         expectedStart: expectedStart || "",
         assignRemarks: assignRemarks || "",
@@ -399,6 +400,7 @@ export async function updateStatus(formData: FormData) {
       complaintId: id,
       docketNumber: complaint.docketNumber,
       data: {
+        complainantName: complaint.complainantName || "",
         status,
         note: note || "",
       },

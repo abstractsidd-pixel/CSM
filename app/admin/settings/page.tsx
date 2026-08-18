@@ -7,14 +7,12 @@ import {
   deleteCategory,
   deleteDivision,
   updateSla,
-  updateTemplate,
 } from "@/app/actions/admin"
 import type { ComponentProps } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Table,
   TableBody,
@@ -27,11 +25,10 @@ import {
   getBuildings,
   getCategories,
   getDivisions,
-  getNotificationTemplates,
   getSlaRules,
   getStaff,
 } from "@/lib/queries"
-import { Bell, Building2, Clock, Layers3, ShieldCheck, ShieldAlert, Trash2, Plus } from "lucide-react"
+import { Building2, Clock, Layers3, ShieldCheck, ShieldAlert, Trash2 } from "lucide-react"
 import { getSession } from "@/lib/session"
 import Link from "next/link"
 import { StaffManager } from "@/components/admin/staff-manager"
@@ -69,13 +66,12 @@ export default async function SettingsPage() {
   const canAddStaff = isAE || isEE || isDean
   const canViewStaff = isAE || isEE || isDean
 
-  const [buildings, categories, divisions, staff, slaRules, templates] = await Promise.all([
+  const [buildings, categories, divisions, staff, slaRules] = await Promise.all([
     getBuildings(),
     getCategories(),
     getDivisions(),
     getStaff(),
     getSlaRules(),
-    getNotificationTemplates(),
   ])
 
   const staffName = (id: number | null) => staff.find((s) => s.id === id)?.name ?? "-"
@@ -96,10 +92,6 @@ export default async function SettingsPage() {
     "use server"
     await updateSla(formData)
   }
-  const updateTemplateAction = async (formData: FormData) => {
-    "use server"
-    await updateTemplate(formData)
-  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -108,7 +100,7 @@ export default async function SettingsPage() {
         <p className="text-sm text-muted-foreground">
           {isJE && "Manage buildings and categories."}
           {isAE && "Manage buildings, categories, and view IWD staff."}
-          {canManageStaff && "Configure CMS master data, SLA limits, staff access, and notification content."}
+          {canManageStaff && "Configure CMS master data, SLA limits, and staff access."}
         </p>
       </div>
 
@@ -356,9 +348,9 @@ export default async function SettingsPage() {
         </section>
       )}
 
-      {/* SLA & Templates — EE/Dean only */}
+      {/* SLA — EE/Dean only */}
       {canManageStaff && (
-        <section className="grid gap-4 lg:grid-cols-2">
+        <section>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -380,36 +372,6 @@ export default async function SettingsPage() {
                   </div>
                   <Input name="hours" type="number" min="1" defaultValue={rule.hours} />
                   <Button type="submit">Save</Button>
-                </form>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Bell className="size-4 text-primary" />
-                Notification Templates
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              {templates.map((template) => (
-                <form key={template.id} action={updateTemplateAction} className="flex flex-col gap-2 rounded-lg border border-border p-3">
-                  <input type="hidden" name="id" value={template.id} />
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-medium">{template.event}</p>
-                    <FormSelect name="channel" label="Channel" defaultValue={template.channel}>
-                      <option value="Email">Email</option>
-                      <option value="SMS">SMS</option>
-                      <option value="Email + SMS">Email + SMS</option>
-                    </FormSelect>
-                  </div>
-                  <Field name="subject" label="Subject" defaultValue={template.subject ?? ""} />
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor={`body-${template.id}`}>Body</Label>
-                    <Textarea id={`body-${template.id}`} name="body" defaultValue={template.body} rows={3} required />
-                  </div>
-                  <Button type="submit">Save Template</Button>
                 </form>
               ))}
             </CardContent>

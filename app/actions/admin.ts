@@ -6,7 +6,6 @@ import {
   technicians,
   categories,
   slaRules,
-  notificationTemplates,
   staff,
   users,
 } from "@/lib/db/schema"
@@ -246,28 +245,6 @@ export async function updateSla(formData: FormData) {
 
   await db.update(slaRules).set({ hours }).where(eq(slaRules.priority, priority))
   await logActivity(session?.email || "system", session?.role || "system", "SLA_UPDATED", `Priority: ${priority} Hours: ${hours}`)
-  revalidatePath("/admin/settings")
-  return { ok: true }
-}
-
-export async function updateTemplate(formData: FormData) {
-  const limitError = await checkMutationLimit()
-  if (limitError) return { error: limitError }
-
-  const roleError = await requireEeOrDean()
-  if (roleError) return { error: roleError }
-
-  const session = await getSession()
-  const id = Number(formData.get("id"))
-  await db
-    .update(notificationTemplates)
-    .set({
-      subject: (formData.get("subject") as string) || null,
-      body: formData.get("body") as string,
-      channel: (formData.get("channel") as string) || "Email",
-    })
-    .where(eq(notificationTemplates.id, id))
-  await logActivity(session?.email || "system", session?.role || "system", "TEMPLATE_UPDATED", `Template ID: ${id}`)
   revalidatePath("/admin/settings")
   return { ok: true }
 }
