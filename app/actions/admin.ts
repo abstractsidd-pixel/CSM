@@ -288,42 +288,6 @@ export async function deleteUser(id: number) {
   revalidatePath("/admin/users")
 }
 
-export async function updateUser(formData: FormData) {
-  const limitError = await checkMutationLimit()
-  if (limitError) return { error: limitError }
-
-  const roleError = await requireEeOrDean()
-  if (roleError) return { error: roleError }
-
-  const session = await getSession()
-  const id = Number(formData.get("id"))
-  if (!id) return { error: "User ID is required." }
-
-  const name = (formData.get("name") as string)?.trim()
-  const email = (formData.get("email") as string)?.trim()
-  const role = (formData.get("role") as string)?.trim()
-
-  if (!name || !email || !role) return { error: "Name, email, and role are required." }
-
-  const validRoles = ["User", "HallOffice", ...ADMIN_ROLES]
-  if (!validRoles.includes(role as typeof validRoles[number])) {
-    return { error: "Invalid role." }
-  }
-
-  const existing = await db.select().from(users).where(eq(users.id, id)).limit(1)
-  if (!existing[0]) return { error: "User not found." }
-
-  if (existing[0].email !== email) {
-    const emailTaken = await db.select().from(users).where(eq(users.email, email)).limit(1)
-    if (emailTaken.length > 0) return { error: "A user with this email already exists." }
-  }
-
-  await db.update(users).set({ name, email, role }).where(eq(users.id, id))
-  await logActivity(session?.email || "system", session?.role || "system", "USER_UPDATED", `User ID: ${id} Name: ${name} Role: ${role}`)
-  revalidatePath("/admin/users")
-  return { ok: true }
-}
-
 export async function deleteStaff(id: number) {
   const limitError = await checkMutationLimit()
   if (limitError) return { error: limitError }

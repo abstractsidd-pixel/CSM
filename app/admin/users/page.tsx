@@ -3,8 +3,15 @@ import { getSession } from "@/lib/session"
 import { isAdminRole } from "@/lib/constants"
 import { getAllUsers } from "@/lib/queries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Users } from "lucide-react"
-import { UserManager } from "@/components/admin/user-manager"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +29,7 @@ export default async function UsersPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">User Accounts</h1>
         <p className="text-sm text-muted-foreground">
-          Manage registered user accounts.
+          All registered user accounts.
         </p>
       </div>
 
@@ -34,7 +41,31 @@ export default async function UsersPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <UserManager users={allUsers} />
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {allUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.role}</TableCell>
+                </TableRow>
+              ))}
+              {allUsers.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} className="py-8 text-center text-sm text-muted-foreground">
+                    No user accounts yet.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
